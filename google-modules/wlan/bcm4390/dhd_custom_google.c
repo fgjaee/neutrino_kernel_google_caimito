@@ -150,21 +150,6 @@ extern void exynos_pcie_set_skip_config(int ch_num, bool val);
 extern void google_pcie_dump_debug(int num);
 #endif /* CONFIG_SOC_LGA */
 
-#ifdef DHD_COREDUMP
-#define DEVICE_NAME "wlan"
-
-static void sscd_release(struct device *dev);
-static struct sscd_platform_data sscd_pdata;
-static struct platform_device sscd_dev = {
-	.name            = DEVICE_NAME,
-	.driver_override = SSCD_NAME,
-	.id              = -1,
-	.dev             = {
-		.platform_data = &sscd_pdata,
-		.release       = sscd_release,
-		},
-};
-
 /* Google PCIe interface */
 static int pcie_ch_num = GOOGLE_PCIE_CH_NUM;
 static dhd_pcie_event_cb_t g_pfn;
@@ -190,6 +175,21 @@ int pcie_dummy_return(const char *s)
 	return 0;
 }
 
+#ifdef DHD_COREDUMP
+#define DEVICE_NAME "wlan"
+
+static void sscd_release(struct device *dev);
+static struct sscd_platform_data sscd_pdata;
+static struct platform_device sscd_dev = {
+	.name            = DEVICE_NAME,
+	.driver_override = SSCD_NAME,
+	.id              = -1,
+	.dev             = {
+		.platform_data = &sscd_pdata,
+		.release       = sscd_release,
+		},
+};
+
 #if IS_ENABLED(CONFIG_GOOGLE_CRASH_DEBUG_DUMP)
 void update_google_cdd_wifi_stat(uint32_t cdd_wifi_bitmap, bool enable)
 {
@@ -211,6 +211,29 @@ void update_google_cdd_wifi_stat(uint32_t cdd_wifi_bitmap, bool enable)
 #define update_google_cdd_wifi_stat(bitmap, enable)
 #endif /* CONFIG_GOOGLE_CRASH_DEBUG_DUMP */
 
+static void sscd_release(struct device *dev)
+{
+	DHD_INFO(("%s: enter\n", __FUNCTION__));
+}
+
+/* trigger coredump */
+static int
+dhd_set_coredump(const char *buf, int buf_len, const char *info)
+{
+	struct sscd_platform_data *pdata = dev_get_platdata(&sscd_dev.dev);
+	struct sscd_segment seg;
+
+	if (pdata->sscd_report) {
+		bzero(&seg, sizeof(seg));
+		seg.addr = (void *) buf;
+		seg.size = buf_len;
+		pdata->sscd_report(&sscd_dev, &seg, 1, 0, info);
+	}
+	return 0;
+}
+#endif /* DHD_COREDUMP */
+
+/* PCIe control functions */
 #if IS_ENABLED(CONFIG_PCI_EXYNOS_GS)
 #define _pcie_pm_resume(ch) exynos_pcie_pm_resume(ch)
 #define _pcie_pm_suspend(ch) exynos_pcie_pm_suspend(ch)
@@ -339,28 +362,6 @@ void _pcie_deregister_event(void *plat_info)
 	}
 }
 #endif /* !IS_ENABLED(CONFIG_PCI_EXYNOS_GS) */
-
-static void sscd_release(struct device *dev)
-{
-	DHD_INFO(("%s: enter\n", __FUNCTION__));
-}
-
-/* trigger coredump */
-static int
-dhd_set_coredump(const char *buf, int buf_len, const char *info)
-{
-	struct sscd_platform_data *pdata = dev_get_platdata(&sscd_dev.dev);
-	struct sscd_segment seg;
-
-	if (pdata->sscd_report) {
-		bzero(&seg, sizeof(seg));
-		seg.addr = (void *) buf;
-		seg.size = buf_len;
-		pdata->sscd_report(&sscd_dev, &seg, 1, 0, info);
-	}
-	return 0;
-}
-#endif /* DHD_COREDUMP */
 
 #ifdef GET_CUSTOM_MAC_ENABLE
 
