@@ -31,6 +31,7 @@
 #include <linux/fcntl.h>
 #include <linux/fs.h>
 #include <linux/of_gpio.h>
+#include <bcmutils.h>
 #ifdef CONFIG_WIFI_CONTROL_FUNC
 #include <linux/wlan_plat.h>
 #else
@@ -372,7 +373,7 @@ typedef struct {
     char sku[MAX_HW_INFO_LEN];
 } sku_info_t;
 
-sku_info_t sku_table[] = {
+static sku_info_t sku_table[] = {
 	{ {"G9S9B"}, {"MMW"} },
 	{ {"G8V0U"}, {"MMW"} },
 	{ {"GFQM1"}, {"MMW"} },
@@ -513,8 +514,8 @@ enum {
 
 #define DEFAULT_VAL "DEFAULT"
 
-char val_revision[MAX_HW_INFO_LEN] = DEFAULT_VAL;
-char val_sku[MAX_HW_INFO_LEN] = DEFAULT_VAL;
+static char val_revision[MAX_HW_INFO_LEN] = DEFAULT_VAL;
+static char val_sku[MAX_HW_INFO_LEN] = DEFAULT_VAL;
 
 enum hw_stage_attr {
 	DEV = 1,
@@ -529,7 +530,7 @@ typedef struct platform_hw_info {
 	uint8 avail_bmap;
 	char ext_name[MAX_FILE_COUNT][MAX_HW_EXT_LEN];
 } platform_hw_info_t;
-platform_hw_info_t platform_hw_info;
+static platform_hw_info_t platform_hw_info;
 
 static void
 dhd_set_platform_ext_name(char *hw_rev, char *hw_sku)
@@ -1373,6 +1374,9 @@ void dhd_plat_report_bh_sched(void *plat_info, int resched)
 	dhd_plat_info_t *p = plat_info;
 	uint64 curr_time_ns;
 	uint64 time_delta_ns;
+
+	if (IS_ENABLED(CONFIG_IRQ_SBALANCE))
+		return;
 
 	if (dhd_force_max_cpu_freq) {
 		dhd_force_affinity_cpufreq(p->pdev);
