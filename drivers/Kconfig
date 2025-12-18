@@ -243,4 +243,6 @@ source "google-modules/Kconfig"
 
 source "drivers/kernelsu/Kconfig"
 
+
+source "drivers/rekernel/Kconfig"
 endmenu
