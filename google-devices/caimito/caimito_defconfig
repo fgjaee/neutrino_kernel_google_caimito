@@ -13,6 +13,10 @@ CONFIG_OVERLAY=m
 CONFIG_OVERLAY_FS=y
 CONFIG_TMPFS_XATTR=y
 
+# KernelSU add-ons
+CONFIG_SUKISU_ULTRA=y
+CONFIG_KPM=y
+
 # private/google-modules/radio/samsung/s5400/Kconfig
 CONFIG_EXYNOS_MODEM_IF=m
 CONFIG_SEC_MODEM_S5100=m
