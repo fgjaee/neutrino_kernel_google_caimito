@@ -60,7 +60,7 @@ jobs:
           path: |
             out/**/dist/*
           if-no-files-found: warn
-```0      - name: Cache ccache
+      - name: Cache ccache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ccache
