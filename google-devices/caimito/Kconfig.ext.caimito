@@ -4,6 +4,10 @@ source "$(KCONFIG_EXT_MODULES_PREFIX)private/google-modules/display/common/Kconf
 
 source "$(KCONFIG_EXT_MODULES_PREFIX)private/google-modules/fingerprint/qcom/qfs4008/Kconfig"
 
+source "$(KCONFIG_EXT_MODULES_PREFIX)private/google-modules/mountify/Kconfig"
+
+source "$(KCONFIG_EXT_MODULES_PREFIX)private/google-modules/overlay/Kconfig"
+
 source "$(KCONFIG_EXT_MODULES_PREFIX)private/google-modules/radio/samsung/s5400/Kconfig"
 
 source "$(KCONFIG_EXT_MODULES_PREFIX)private/google-modules/touch/common/Kconfig"
