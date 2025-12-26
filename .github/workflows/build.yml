@@ -60,3 +60,29 @@ jobs:
           path: |
             out/**/dist/*
           if-no-files-found: warn
+```0      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ${{ runner.os }}-ccache-${{ github.ref }}-${{ hashFiles('google-devices/caimito/**', 'build.config.*', 'google-devices/caimito/caimito_defconfig') }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-${{ github.ref }}-
+            ${{ runner.os }}-ccache-
+
+      - name: Build Caimito kernel
+        env:
+          BUILD_CONFIG: google-devices/caimito/build.config.caimito
+          CCACHE_EXEC: /usr/bin/ccache
+        run: |
+          export CCACHE_DIR=~/.cache/ccache
+          mkdir -p "$CCACHE_DIR"
+          ./build/build.sh
+
+      - name: Upload dist artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-dist
+          path: |
+            out/**/dist/*
+          if-no-files-found: warn
