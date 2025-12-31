@@ -18,6 +18,7 @@ CONFIG_KSU=y
 CONFIG_KSU_MANUAL_SU=y
 CONFIG_SUKISU_ULTRA=y
 CONFIG_KPM=y
+CONFIG_HYMOFS=y
 
 # private/google-modules/radio/samsung/s5400/Kconfig
 CONFIG_EXYNOS_MODEM_IF=m
