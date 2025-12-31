@@ -1,0 +1,62 @@
+name: Kernel Build
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc \
+            bison \
+            build-essential \
+            ccache \
+            curl \
+            flex \
+            libelf-dev \
+            libncurses5-dev \
+            libssl-dev \
+            python3 \
+            zlib1g-dev
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ${{ runner.os }}-ccache-${{ github.ref }}-${{ hashFiles('google-devices/caimito/**/*', 'build.config.*', 'google-devices/caimito/caimito_defconfig') }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-${{ github.ref }}-
+            ${{ runner.os }}-ccache-
+
+      - name: Build Caimito kernel
+        env:
+          BUILD_CONFIG: google-devices/caimito/build.config.caimito
+          CCACHE_EXEC: /usr/bin/ccache
+        run: |
+          export CCACHE_DIR=~/.cache/ccache
+          mkdir -p "$CCACHE_DIR"
+          ./build/build.sh
+
+      - name: Upload dist artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-dist
+          path: |
+            out/**/dist/*
+          if-no-files-found: warn
