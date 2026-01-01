@@ -14,7 +14,8 @@ jobs:
     runs-on: ubuntu-22.04
 
     env:
-      BUILD_CONFIG: google-devices/caimito/build.config.caimito
+      # Pixel 9 Pro Fold is comet
+      BUILD_CONFIG: google-devices/comet/build.config.comet
       CCACHE_DIR: /home/runner/.cache/ccache
       CCACHE_EXEC: /usr/bin/ccache
 
@@ -24,6 +25,13 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0
+
+      - name: Verify BUILD_CONFIG exists
+        run: |
+          echo "Using BUILD_CONFIG=$BUILD_CONFIG"
+          test -f "$BUILD_CONFIG"
+          echo "BUILD_CONFIG first lines:"
+          sed -n '1,80p' "$BUILD_CONFIG"
 
       - name: Install build dependencies
         run: |
@@ -43,7 +51,8 @@ jobs:
             rsync \
             unzip \
             zip \
-            zlib1g-dev
+            zlib1g-dev \
+            lz4
 
       - name: Prepare ccache
         run: |
@@ -58,7 +67,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/.cache/ccache
-          key: ${{ runner.os }}-ccache-${{ github.ref_name }}-${{ hashFiles('google-devices/caimito/**', 'build.config.*', 'build/**') }}
+          key: ${{ runner.os }}-ccache-${{ github.ref_name }}-${{ hashFiles('google-devices/comet/**', 'build.config.*', 'build/**') }}
           restore-keys: |
             ${{ runner.os }}-ccache-${{ github.ref_name }}-
             ${{ runner.os }}-ccache-
@@ -67,16 +76,25 @@ jobs:
         run: |
           echo "PWD=$(pwd)"
           ls -la
-          ls -la google-devices/caimito || true
+          ls -la google-devices/comet || true
           ls -la build || true
           ls -la "$BUILD_CONFIG" || true
 
-      - name: Build Caimito kernel
+      - name: Build Comet kernel
         run: |
           export CCACHE_DIR="$CCACHE_DIR"
           export CCACHE_EXEC="$CCACHE_EXEC"
           export USE_CCACHE=1
-          ./build/build.sh
+          mkdir -p out/dist
+          ./build/build.sh --build_config="$BUILD_CONFIG" --dist_dir=out/dist
+
+      - name: Locate kernel outputs
+        if: always()
+        run: |
+          echo "Looking for kernel outputs under out/"
+          find out -type f \( -name "Image.lz4" -o -name "Image" -o -name "dtbo.img" -o -name "boot.img" \) -print -exec ls -lh {} \; || true
+          echo "Listing out/dist:"
+          ls -la out/dist || true
 
       - name: ccache stats
         if: always()
@@ -89,5 +107,5 @@ jobs:
         with:
           name: kernel-dist
           path: |
-            out/**/dist/*
-          if-no-files-found: warn
+            out/dist/*
+          if-no-files-found: error
