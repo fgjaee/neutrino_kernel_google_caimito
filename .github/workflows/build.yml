@@ -67,7 +67,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/.cache/ccache
-          key: ${{ runner.os }}-ccache-${{ github.ref_name }}-${{ hashFiles('google-devices/comet/**', 'build.config.*', 'build/**') }}
+          key: ${{ runner.os }}-ccache-${{ github.ref_name }}-${{ hashFiles('google-devices/comet/**', 'build.config.*') }}
           restore-keys: |
             ${{ runner.os }}-ccache-${{ github.ref_name }}-
             ${{ runner.os }}-ccache-
@@ -94,8 +94,22 @@ jobs:
           export CCACHE_DIR="$CCACHE_DIR"
           export CCACHE_EXEC="$CCACHE_EXEC"
           export USE_CCACHE=1
-          mkdir -p out/dist
-          ./build/build.sh --build_config="$BUILD_CONFIG" --dist_dir=out/dist
+          cd google-devices/comet
+          chmod +x build_comet.sh
+          ./build_comet.sh
+          ROOT_DIR="$(pwd)/.."
+          DIST_DIR="$ROOT_DIR/out/dist"
+          mkdir -p "$DIST_DIR"
+          echo "Collecting kernel artifacts into $DIST_DIR"
+          find . -maxdepth 6 -type f \(
+            -name "Image" -o \
+            -name "Image.lz4" -o \
+            -name "Image.gz" -o \
+            -name "Image-dtb" -o \
+            -name "dtbo.img" -o \
+            -name "boot.img" -o \
+            -name "kernel-*.zip"
+          \) -print -exec cp {} "$DIST_DIR"/ \;
 
       - name: Locate kernel outputs
         if: always()
@@ -116,5 +130,5 @@ jobs:
         with:
           name: kernel-dist
           path: |
-            out/dist/*
+            out/dist/**
           if-no-files-found: error
