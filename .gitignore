@@ -98,6 +98,7 @@ modules.order
 !.get_maintainer.ignore
 !.gitattributes
 !.gitignore
+!.github/
 !.mailmap
 !.rustfmt.toml
 

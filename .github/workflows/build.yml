@@ -1,0 +1,74 @@
+name: Kernel Build
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    env:
+      BUILD_CONFIG: google-devices/comet/build.config.comet
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc \
+            bison \
+            build-essential \
+            ccache \
+            curl \
+            flex \
+            libelf-dev \
+            libncurses5-dev \
+            libssl-dev \
+            python3 \
+            zlib1g-dev
+
+      - name: Cache ccache
+          uses: actions/cache@v4
+          with:
+            path: ~/.cache/ccache
+            key: ${{ runner.os }}-ccache-${{ github.ref }}-${{ hashFiles('google-devices/comet/**', 'build.config.*', 'build/**') }}
+            restore-keys: |
+              ${{ runner.os }}-ccache-${{ github.ref }}-
+              ${{ runner.os }}-ccache-
+
+      - name: Verify build config exists
+        run: |
+          echo "Using build config: $BUILD_CONFIG"
+          if [ ! -f "$BUILD_CONFIG" ]; then
+            echo "Missing build config: $BUILD_CONFIG"
+            exit 1
+          fi
+
+      - name: Build Pixel 9 Pro Fold (comet) kernel
+        env:
+          CCACHE_EXEC: /usr/bin/ccache
+        run: |
+          export CCACHE_DIR=~/.cache/ccache
+          mkdir -p "$CCACHE_DIR"
+          ./build/build.sh --build_config="$BUILD_CONFIG" --dist_dir=out/dist
+
+      - name: List key build artifacts
+        run: |
+          find out -type f \( -name Image.lz4 -o -name Image -o -name dtbo.img \) -exec ls -lh {} +
+
+      - name: Upload dist artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-dist
+          path: out/dist/*
+          if-no-files-found: error

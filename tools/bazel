@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Copyright (C) 2024 The Android Open Source Project
+# SPDX-License-Identifier: GPL-2.0
+
+set -euo pipefail
+
+DEFAULT_BAZELISK_BASE_URL="https://github.com/bazelbuild/bazel/releases/download"
+export BAZELISK_BASE_URL="${BAZELISK_BASE_URL:-${DEFAULT_BAZELISK_BASE_URL}}"
+
+if [[ -n "${BAZEL_REAL:-}" ]]; then
+  exec "${BAZEL_REAL}" "$@"
+fi
+
+if command -v bazelisk >/dev/null 2>&1; then
+  exec bazelisk "$@"
+fi
+
+REPO_ROOT="$(cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BAZELISK_DIR="${REPO_ROOT}/prebuilts/bazel"
+BAZELISK_BIN="${BAZELISK_DIR}/bazelisk"
+BAZELISK_VERSION="${BAZELISK_VERSION:-v1.19.0}"
+
+if [[ ! -x "${BAZELISK_BIN}" ]]; then
+  mkdir -p "${BAZELISK_DIR}"
+
+  OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  ARCH="$(uname -m)"
+  case "${ARCH}" in
+    x86_64|amd64)
+      ARCH="amd64"
+      ;;
+    aarch64|arm64)
+      ARCH="arm64"
+      ;;
+  esac
+
+  URL="https://github.com/bazelbuild/bazelisk/releases/download/${BAZELISK_VERSION}/bazelisk-${OS}-${ARCH}"
+  echo "Downloading bazelisk ${BAZELISK_VERSION} to ${BAZELISK_BIN}" >&2
+  curl -fLo "${BAZELISK_BIN}" "${URL}"
+  chmod +x "${BAZELISK_BIN}"
+fi
+
+exec "${BAZELISK_BIN}" "$@"
