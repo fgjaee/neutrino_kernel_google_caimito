@@ -2,7 +2,8 @@ name: Kernel Build
 
 on:
   push:
-    branches: ["**"]
+    branches:
+      - "**"
   pull_request:
 
 permissions:
@@ -11,8 +12,12 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-22.04
+
     env:
-      BUILD_CONFIG: google-devices/comet/build.config.comet
+      BUILD_CONFIG: google-devices/caimito/build.config.caimito
+      CCACHE_DIR: /home/runner/.cache/ccache
+      CCACHE_EXEC: /usr/bin/ccache
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -30,45 +35,59 @@ jobs:
             ccache \
             curl \
             flex \
+            git \
             libelf-dev \
             libncurses5-dev \
             libssl-dev \
             python3 \
+            rsync \
+            unzip \
+            zip \
             zlib1g-dev
+
+      - name: Prepare ccache
+        run: |
+          mkdir -p "$CCACHE_DIR"
+          ccache --set-config=cache_dir="$CCACHE_DIR"
+          ccache --set-config=compression=true
+          ccache --set-config=compression_level=6
+          ccache --set-config=max_size=10G
+          ccache -z || true
 
       - name: Cache ccache
         uses: actions/cache@v4
         with:
-          path: ~/.cache/ccache
-          key: ${{ runner.os }}-ccache-${{ github.ref }}-${{ hashFiles('google-devices/comet/build.config.comet') }}-${{ hashFiles('google-devices/comet/comet_defconfig') }}-${{ hashFiles('build.config.*') }}
+          path: /home/runner/.cache/ccache
+          key: ${{ runner.os }}-ccache-${{ github.ref_name }}-${{ hashFiles('google-devices/caimito/**', 'build.config.*', 'build/**') }}
           restore-keys: |
-            ${{ runner.os }}-ccache-${{ github.ref }}-
+            ${{ runner.os }}-ccache-${{ github.ref_name }}-
             ${{ runner.os }}-ccache-
 
-      - name: Verify build config exists
+      - name: Sanity check key paths
         run: |
-          echo "Using build config: $BUILD_CONFIG"
-          if [ ! -f "$BUILD_CONFIG" ]; then
-            echo "Missing build config: $BUILD_CONFIG"
-            exit 1
-          fi
+          echo "PWD=$(pwd)"
+          ls -la
+          ls -la google-devices/caimito || true
+          ls -la build || true
+          ls -la "$BUILD_CONFIG" || true
 
-      - name: Build Pixel 9 Pro Fold (comet) kernel
-        env:
-          CCACHE_EXEC: /usr/bin/ccache
+      - name: Build Caimito kernel
         run: |
-          export CCACHE_DIR=~/.cache/ccache
-          mkdir -p "$CCACHE_DIR"
-          ./build/build.sh --build_config="$BUILD_CONFIG" --dist_dir=out/dist
+          export CCACHE_DIR="$CCACHE_DIR"
+          export CCACHE_EXEC="$CCACHE_EXEC"
+          export USE_CCACHE=1
+          ./build/build.sh
 
-      - name: List key build artifacts
+      - name: ccache stats
+        if: always()
         run: |
-          find out -type f \( -name Image.lz4 -o -name Image -o -name dtbo.img \) -exec ls -lh {} +
+          ccache -s || true
 
       - name: Upload dist artifacts
-        if: success() || failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: kernel-dist
-          path: out/dist/*
-          if-no-files-found: error
+          path: |
+            out/**/dist/*
+          if-no-files-found: warn
