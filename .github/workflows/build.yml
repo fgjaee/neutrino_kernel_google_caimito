@@ -95,8 +95,35 @@ jobs:
           export CCACHE_EXEC="$CCACHE_EXEC"
           export USE_CCACHE=1
           chmod +x ./google-devices/comet/build_comet.sh
+          ./google-devices/comet/build_comet.sh
+
+      - name: Collect kernel artifacts
+        run: |
+          set -euo pipefail
           mkdir -p out/dist
-          ./google-devices/comet/build_comet.sh --dist_dir=out/dist
+
+          echo "Locating dist directories produced by the build script..."
+          dist_dirs=$(find bazel-bin -type d -path "*/dist" -print || true)
+          echo "Found dist directories:"${dist_dirs:+$'\n'}"$dist_dirs"
+
+          if [ -z "$dist_dirs" ]; then
+            echo "No dist directories found under bazel-bin" >&2
+            exit 1
+          fi
+
+          echo "Copying kernel artifacts into out/dist";
+          echo "$dist_dirs" | while IFS= read -r dist_dir; do
+            [ -n "$dist_dir" ] || continue
+            echo "Inspecting $dist_dir"
+            find "$dist_dir" -maxdepth 1 -type f -print
+            for artifact in Image Image.lz4 vmlinux vmlinux.symtab dtbo.img boot.img vendor_boot.img vendor_kernel_boot.img vendor_dlkm.img system_dlkm.img modules.zip *.img *.gz *.tar.gz *.zip; do
+              for src in "$dist_dir"/$artifact; do
+                [ -e "$src" ] || continue
+                echo "Copying $src"
+                cp -v "$src" out/dist/
+              done
+            done
+          done
 
       - name: Locate kernel outputs
         if: always()
