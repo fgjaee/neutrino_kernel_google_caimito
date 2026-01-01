@@ -67,7 +67,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/.cache/ccache
-          key: ${{ runner.os }}-ccache-${{ github.ref_name }}-${{ hashFiles('google-devices/comet/**', 'build.config.*', 'build/**') }}
+          key: ${{ runner.os }}-ccache-${{ github.ref_name }}-${{ hashFiles('google-devices/comet/**', 'build.config.*') }}
           restore-keys: |
             ${{ runner.os }}-ccache-${{ github.ref_name }}-
             ${{ runner.os }}-ccache-
@@ -94,8 +94,9 @@ jobs:
           export CCACHE_DIR="$CCACHE_DIR"
           export CCACHE_EXEC="$CCACHE_EXEC"
           export USE_CCACHE=1
+          chmod +x ./google-devices/comet/build_comet.sh
           mkdir -p out/dist
-          ./build/build.sh --build_config="$BUILD_CONFIG" --dist_dir=out/dist
+          ./google-devices/comet/build_comet.sh --dist_dir=out/dist
 
       - name: Locate kernel outputs
         if: always()
@@ -116,5 +117,5 @@ jobs:
         with:
           name: kernel-dist
           path: |
-            out/dist/*
+            out/dist/**
           if-no-files-found: error
