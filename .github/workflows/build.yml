@@ -94,22 +94,9 @@ jobs:
           export CCACHE_DIR="$CCACHE_DIR"
           export CCACHE_EXEC="$CCACHE_EXEC"
           export USE_CCACHE=1
-          cd google-devices/comet
-          chmod +x build_comet.sh
-          ./build_comet.sh
-          ROOT_DIR="$(pwd)/.."
-          DIST_DIR="$ROOT_DIR/out/dist"
-          mkdir -p "$DIST_DIR"
-          echo "Collecting kernel artifacts into $DIST_DIR"
-          find . -maxdepth 6 -type f \(
-            -name "Image" -o \
-            -name "Image.lz4" -o \
-            -name "Image.gz" -o \
-            -name "Image-dtb" -o \
-            -name "dtbo.img" -o \
-            -name "boot.img" -o \
-            -name "kernel-*.zip"
-          \) -print -exec cp {} "$DIST_DIR"/ \;
+          chmod +x ./google-devices/comet/build_comet.sh
+          mkdir -p out/dist
+          ./google-devices/comet/build_comet.sh --dist_dir=out/dist
 
       - name: Locate kernel outputs
         if: always()
