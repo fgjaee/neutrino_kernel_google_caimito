@@ -33,6 +33,19 @@ jobs:
           echo "BUILD_CONFIG first lines:"
           sed -n '1,80p' "$BUILD_CONFIG"
 
+      - name: Bazel rc sanity check
+        run: |
+          set -euo pipefail
+          echo "Searching for zumapro_base usage..."
+          grep -R --line-number "zumapro_base" google-devices
+          echo "Locating build:zumapro_base definitions..."
+          grep -R --line-number "build:zumapro_base" google-devices
+          echo "Running tools/bazel --announce_rc version"
+          if ! ./tools/bazel --announce_rc version; then
+            echo "Bazel rc sanity check failed: ensure all referenced --config values are defined by loaded bazelrc files." >&2
+            exit 1
+          fi
+
       - name: Install build dependencies
         run: |
           sudo apt-get update

@@ -11,11 +11,100 @@ REPO_ROOT="$(cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BAZEL_ARGS=()
 
 if [[ -n "${BUILD_CONFIG:-}" ]]; then
-  if [[ "${BUILD_CONFIG}" =~ (^|/)google-devices/([^/]+)/ ]]; then
+  if [[ "${BUILD_CONFIG}" =~ (^|/)google-devices/([^/]+)/build\.config\.([^/]+)$ ]] && \
+    [[ "${BASH_REMATCH[2]}" == "${BASH_REMATCH[3]}" ]]; then
     DEVICE="${BASH_REMATCH[2]}"
     DEVICE_BAZELRC="${REPO_ROOT}/google-devices/${DEVICE}/device.bazelrc"
+
     if [[ -f "${DEVICE_BAZELRC}" ]]; then
-      BAZEL_ARGS+=("--bazelrc=${DEVICE_BAZELRC}")
+      declare -A CONFIG_SOURCES=()
+      declare -A LOADED_BAZELRCS=()
+      declare -A LOADED_CONFIGS=()
+      declare -A REQUESTED_CONFIGS=()
+      declare -a BAZELRCS_TO_LOAD=()
+
+      mapfile -t ALL_DEVICE_BAZELRCS < <(find "${REPO_ROOT}/google-devices" -maxdepth 2 -type f -name 'device.bazelrc' -print 2>/dev/null | sort)
+
+      for RC in "${ALL_DEVICE_BAZELRCS[@]}"; do
+        while read -r CONFIG_NAME; do
+          [[ -n "${CONFIG_NAME}" ]] || continue
+          CONFIG_SOURCES["${CONFIG_NAME}"]="${RC}"
+        done < <(grep -oE '^build:[^[:space:]]+' "${RC}" 2>/dev/null | sed 's/^build://')
+      done
+
+      add_requested_config() {
+        local CONFIG_NAME="$1"
+        [[ -n "${CONFIG_NAME}" ]] || return 0
+        REQUESTED_CONFIGS["${CONFIG_NAME}"]=1
+      }
+
+      add_bazelrc() {
+        local RC="$1"
+        [[ -f "${RC}" ]] || return 0
+        [[ -n "${LOADED_BAZELRCS["${RC}"]:-}" ]] && return 0
+
+        LOADED_BAZELRCS["${RC}"]=1
+        BAZEL_ARGS+=("--bazelrc=${RC}")
+
+        while read -r CONFIG_NAME; do
+          [[ -n "${CONFIG_NAME}" ]] || continue
+          LOADED_CONFIGS["${CONFIG_NAME}"]=1
+        done < <(grep -oE '^build:[^[:space:]]+' "${RC}" 2>/dev/null | sed 's/^build://')
+
+        while read -r CONFIG_NAME; do
+          add_requested_config "${CONFIG_NAME}"
+        done < <(grep -oE -- '--config(=| )[^[:space:]]+' "${RC}" 2>/dev/null | sed -E 's/.*--config(=| )//')
+      }
+
+      parse_args_for_configs() {
+        local -a USER_ARGS=("$@")
+        local INDEX=0
+        while [[ ${INDEX} -lt ${#USER_ARGS[@]} ]]; do
+          local ARG="${USER_ARGS[${INDEX}]}"
+          case "${ARG}" in
+            --config=*)
+              add_requested_config "${ARG#--config=}"
+              ;;
+            --config)
+              local NEXT_INDEX=$((INDEX + 1))
+              local NEXT_ARG="${USER_ARGS[${NEXT_INDEX}]:-}"
+              if [[ -n "${NEXT_ARG}" && "${NEXT_ARG}" != --* ]]; then
+                add_requested_config "${NEXT_ARG}"
+                INDEX=${NEXT_INDEX}
+              fi
+              ;;
+          esac
+          INDEX=$((INDEX + 1))
+        done
+      }
+
+      parse_args_for_configs "$@"
+      BAZELRCS_TO_LOAD+=("${DEVICE_BAZELRC}")
+
+      PENDING=1
+      while [[ ${PENDING} -eq 1 ]]; do
+        PENDING=0
+
+        while [[ ${#BAZELRCS_TO_LOAD[@]} -gt 0 ]]; do
+          NEXT_RC="${BAZELRCS_TO_LOAD[0]}"
+          BAZELRCS_TO_LOAD=("${BAZELRCS_TO_LOAD[@]:1}")
+          if [[ -n "${NEXT_RC}" && -z "${LOADED_BAZELRCS["${NEXT_RC}"]:-}" ]]; then
+            add_bazelrc "${NEXT_RC}"
+            PENDING=1
+          fi
+        done
+
+        for CONFIG_NAME in "${!REQUESTED_CONFIGS[@]}"; do
+          if [[ -n "${LOADED_CONFIGS["${CONFIG_NAME}"]:-}" ]]; then
+            continue
+          fi
+          RC="${CONFIG_SOURCES["${CONFIG_NAME}"]:-}"
+          if [[ -n "${RC}" && -z "${LOADED_BAZELRCS["${RC}"]:-}" ]]; then
+            BAZELRCS_TO_LOAD+=("${RC}")
+            PENDING=1
+          fi
+        done
+      done
     fi
   fi
 fi
