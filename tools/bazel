@@ -15,6 +15,7 @@ if [[ -n "${BUILD_CONFIG:-}" ]]; then
     [[ "${BASH_REMATCH[2]}" == "${BASH_REMATCH[3]}" ]]; then
     DEVICE="${BASH_REMATCH[2]}"
     DEVICE_BAZELRC="${REPO_ROOT}/google-devices/${DEVICE}/device.bazelrc"
+    BASE_DEVICE_BAZELRC="${REPO_ROOT}/google-devices/zumapro/device.bazelrc"
 
     if [[ -f "${DEVICE_BAZELRC}" ]]; then
       declare -A CONFIG_SOURCES=()
@@ -80,6 +81,9 @@ if [[ -n "${BUILD_CONFIG:-}" ]]; then
 
       parse_args_for_configs "$@"
       BAZELRCS_TO_LOAD+=("${DEVICE_BAZELRC}")
+      if [[ -f "${BASE_DEVICE_BAZELRC}" ]]; then
+        BAZELRCS_TO_LOAD+=("${BASE_DEVICE_BAZELRC}")
+      fi
 
       PENDING=1
       while [[ ${PENDING} -eq 1 ]]; do
