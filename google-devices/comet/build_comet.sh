@@ -16,6 +16,5 @@ fi
 
 exec tools/bazel run \
     ${parameters} \
-    --config=stamp \
     --config=comet \
     //private/devices/google/comet:zumapro_comet_dist "$@"
