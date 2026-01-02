@@ -7,15 +7,29 @@ set -euo pipefail
 DEFAULT_BAZELISK_BASE_URL="https://github.com/bazelbuild/bazel/releases/download"
 export BAZELISK_BASE_URL="${BAZELISK_BASE_URL:-${DEFAULT_BAZELISK_BASE_URL}}"
 
+REPO_ROOT="$(cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BAZEL_ARGS=()
+
+if [[ -n "${BUILD_CONFIG:-}" ]]; then
+  if [[ "${BUILD_CONFIG}" =~ (^|/)google-devices/([^/]+)/ ]]; then
+    DEVICE="${BASH_REMATCH[2]}"
+    DEVICE_BAZELRC="${REPO_ROOT}/google-devices/${DEVICE}/device.bazelrc"
+    if [[ -f "${DEVICE_BAZELRC}" ]]; then
+      BAZEL_ARGS+=("--bazelrc=${DEVICE_BAZELRC}")
+    fi
+  fi
+fi
+
+ARGS=("${BAZEL_ARGS[@]}" "$@")
+
 if [[ -n "${BAZEL_REAL:-}" ]]; then
-  exec "${BAZEL_REAL}" "$@"
+  exec "${BAZEL_REAL}" "${ARGS[@]}"
 fi
 
 if command -v bazelisk >/dev/null 2>&1; then
-  exec bazelisk "$@"
+  exec bazelisk "${ARGS[@]}"
 fi
 
-REPO_ROOT="$(cd -- "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BAZELISK_DIR="${REPO_ROOT}/prebuilts/bazel"
 BAZELISK_BIN="${BAZELISK_DIR}/bazelisk"
 BAZELISK_VERSION="${BAZELISK_VERSION:-v1.19.0}"
@@ -40,4 +54,4 @@ if [[ ! -x "${BAZELISK_BIN}" ]]; then
   chmod +x "${BAZELISK_BIN}"
 fi
 
-exec "${BAZELISK_BIN}" "$@"
+exec "${BAZELISK_BIN}" "${ARGS[@]}"
