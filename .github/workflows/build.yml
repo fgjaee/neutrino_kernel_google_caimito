@@ -16,6 +16,7 @@ jobs:
     env:
       # Pixel 9 Pro Fold is comet
       BUILD_CONFIG: google-devices/comet/build.config.comet
+      DEFCONFIG: neutrino_caimito_defconfig
       CCACHE_DIR: /home/runner/.cache/ccache
       CCACHE_EXEC: /usr/bin/ccache
 
@@ -106,11 +107,37 @@ jobs:
           export CCACHE_EXEC="$CCACHE_EXEC"
           export USE_CCACHE=1
 
-          mkdir -p arch/arm64/configs/google-devices/comet
-          cp google-devices/comet/comet_defconfig arch/arm64/configs/google-devices/comet/comet_defconfig
-
-          make O=out google-devices/comet/comet_defconfig
+          make O=out "$DEFCONFIG"
           make O=out -j"$(nproc)"
+
+      - name: Package artifacts
+        run: |
+          set -euo pipefail
+          IMAGE_PATH=""
+          for candidate in out/arch/arm64/boot/Image out/arch/arm64/boot/Image.gz out/arch/arm64/boot/Image.lz4; do
+            if [ -f "$candidate" ]; then
+              IMAGE_PATH="$candidate"
+              break
+            fi
+          done
+
+          if [ -z "$IMAGE_PATH" ]; then
+            echo "Kernel image not found in expected locations" >&2
+            exit 1
+          fi
+
+          mkdir -p out/dist
+          cp "$IMAGE_PATH" out/dist/
+
+          AK3_DIR=out/dist/AnyKernel3
+          rm -rf "$AK3_DIR"
+          curl -L https://github.com/osm0sis/AnyKernel3/archive/refs/heads/master.tar.gz | tar -xz
+          mv AnyKernel3-master "$AK3_DIR"
+          cp anykernel-template/anykernel.sh "$AK3_DIR"/anykernel.sh
+          cp "$IMAGE_PATH" "$AK3_DIR"/Image
+          chmod +x "$AK3_DIR"/anykernel.sh
+
+          (cd out/dist && zip -r "AnyKernel3-comet-caimito-${GITHUB_SHA::7}.zip" AnyKernel3)
 
       - name: ccache stats
         if: always()
@@ -124,4 +151,6 @@ jobs:
           name: kernel-dist
           path: |
             out/arch/arm64/boot/Image*
+            out/dist/AnyKernel3-comet-caimito-*.zip
+            out/dist/Image*
           if-no-files-found: error
