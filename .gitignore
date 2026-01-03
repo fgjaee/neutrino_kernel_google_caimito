@@ -99,6 +99,7 @@ modules.order
 !.gitattributes
 !.gitignore
 !.github/
+!.bazelrc
 !.mailmap
 !.rustfmt.toml
 

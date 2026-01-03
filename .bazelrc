@@ -1,0 +1,2 @@
+# Disable Bazel modules for this workspace to avoid automatic MODULE.bazel creation.
+common --enable_bzlmod=false
