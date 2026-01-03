@@ -33,11 +33,6 @@ jobs:
           echo "BUILD_CONFIG first lines:"
           sed -n '1,80p' "$BUILD_CONFIG"
 
-      - name: Bazel rc sanity check
-        run: |
-          ./tools/bazel version
-          ./tools/bazel help startup_options
-
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -46,18 +41,21 @@ jobs:
             bison \
             build-essential \
             ccache \
+            clang \
             curl \
             flex \
             git \
             libelf-dev \
             libncurses5-dev \
             libssl-dev \
+            lld \
+            llvm \
+            lz4 \
             python3 \
             rsync \
             unzip \
             zip \
-            zlib1g-dev \
-            lz4
+            zlib1g-dev
 
       - name: Prepare ccache
         run: |
@@ -94,111 +92,89 @@ jobs:
           echo "Finding build config files:"
           find . -maxdepth 4 -type f -name "build.config.*" -print
 
-      - name: Fetch Kleaf for Bazel
-        run: |
-          set -e
-          mkdir -p build/kernel
-
-          if [ ! -f build/kernel/kleaf/BUILD.bazel ]; then
-            echo "Kleaf missing or invalid, fetching..."
-            rm -rf /tmp/kernel_build
-            git clone --depth 1 https://android.googlesource.com/kernel/build /tmp/kernel_build
-
-            rm -rf build/kernel/kleaf
-            cp -a /tmp/kernel_build/kleaf build/kernel/kleaf
-          fi
-
-          echo "Verifying Kleaf package:"
-          ls -la build/kernel/kleaf
-          test -f build/kernel/kleaf/BUILD.bazel
-          test -f build/kernel/kleaf/kernel.bzl
-
-      - name: Ensure build directory is not ignored by Bazel
+      - name: Set up Clang toolchain
         run: |
           set -euo pipefail
-          if [ -f .bazelignore ]; then
-            echo "Existing .bazelignore:"
-            cat .bazelignore
+          TOOLCHAIN_BASE="$PWD/prebuilts/clang/host/linux-x86"
+          TOOLCHAIN_DIR="$TOOLCHAIN_BASE/clang-r522817"
 
-            tmp_file=$(mktemp)
-            grep -v -E '^build/?$' .bazelignore > "$tmp_file"
-            mv "$tmp_file" .bazelignore
-
-            echo "Updated .bazelignore:"
-            cat .bazelignore
+          if [ -d "$TOOLCHAIN_DIR/bin" ] && [ -x "$TOOLCHAIN_DIR/bin/clang" ]; then
+            echo "Using existing prebuilts under $TOOLCHAIN_DIR"
           else
-            echo ".bazelignore not found, nothing to update."
+            echo "Downloading kernel Clang prebuilts..."
+            rm -rf "$TOOLCHAIN_DIR"
+            mkdir -p "$TOOLCHAIN_DIR"
+            curl -Lf "https://android.googlesource.com/kernel/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r522817.tar.gz" -o /tmp/clang.tar.gz
+            tar -C "$TOOLCHAIN_DIR" -xzf /tmp/clang.tar.gz
           fi
 
-      - name: Bazel preflight
+          echo "Toolchain contents:"
+          ls -la "$TOOLCHAIN_DIR/bin"
+
+      - name: Build Comet kernel (make)
         run: |
           set -euo pipefail
-          echo "=== Bazel Preflight ==="
-          ./tools/bazel --bazelrc=google-devices/comet/device.bazelrc version
-
-          if [ -f WORKSPACE.bazel ]; then
-            echo "Found WORKSPACE.bazel"
-          elif [ -f WORKSPACE ]; then
-            echo "Found WORKSPACE"
-          else
-            echo "No WORKSPACE file found" >&2
-            exit 1
-          fi
-
-          if [ -f .bazelignore ]; then
-            echo ".bazelignore exists; entries containing 'build':"
-            grep -n "^build[/]*$" .bazelignore || true
-          else
-            echo ".bazelignore not present"
-          fi
-
-          echo "Kleaf layout:"
-          ls -la build/kernel/kleaf
-          echo "Kleaf BUILD.bazel (first 40 lines):"
-          sed -n '1,40p' build/kernel/kleaf/BUILD.bazel
-
-      - name: Build Comet kernel
-        run: |
+          export ARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-android-
+          export LD=ld.lld
           export CCACHE_DIR="$CCACHE_DIR"
           export CCACHE_EXEC="$CCACHE_EXEC"
           export USE_CCACHE=1
-          chmod +x ./google-devices/comet/build_comet.sh
-          ./google-devices/comet/build_comet.sh
 
-      - name: Collect kernel artifacts
+          TOOLCHAIN_DIR="$PWD/prebuilts/clang/host/linux-x86/clang-r522817"
+          if [ -x "$TOOLCHAIN_DIR/bin/clang" ]; then
+            export PATH="$TOOLCHAIN_DIR/bin:$PATH"
+            echo "Using clang from $TOOLCHAIN_DIR"
+          else
+            echo "No prebuilts found; using system clang"
+          fi
+
+          which clang
+          make ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" comet_defconfig
+          make ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" -j"$(nproc)"
+
+      - name: Package kernel with AnyKernel3
         run: |
           set -euo pipefail
           mkdir -p out/dist
 
-          echo "Locating dist directories produced by the build script..."
-          dist_dirs=$(find bazel-bin -type d -path "*/dist" -print || true)
-          echo "Found dist directories:"${dist_dirs:+$'\n'}"$dist_dirs"
-
-          if [ -z "$dist_dirs" ]; then
-            echo "No dist directories found under bazel-bin" >&2
+          IMAGE_PATH=""
+          if [ -f arch/arm64/boot/Image.lz4 ]; then
+            IMAGE_PATH=arch/arm64/boot/Image.lz4
+          elif [ -f arch/arm64/boot/Image.gz ]; then
+            IMAGE_PATH=arch/arm64/boot/Image.gz
+          elif [ -f arch/arm64/boot/Image ]; then
+            echo "Compressing Image to Image.gz for packaging"
+            gzip -c arch/arm64/boot/Image > arch/arm64/boot/Image.gz
+            IMAGE_PATH=arch/arm64/boot/Image.gz
+          else
+            echo "No kernel image found under arch/arm64/boot" >&2
             exit 1
           fi
 
-          echo "Copying kernel artifacts into out/dist";
-          echo "$dist_dirs" | while IFS= read -r dist_dir; do
-            [ -n "$dist_dir" ] || continue
-            echo "Inspecting $dist_dir"
-            find "$dist_dir" -maxdepth 1 -type f -print
-            for artifact in Image Image.lz4 vmlinux vmlinux.symtab dtbo.img boot.img vendor_boot.img vendor_kernel_boot.img vendor_dlkm.img system_dlkm.img modules.zip *.img *.gz *.tar.gz *.zip; do
-              for src in "$dist_dir"/$artifact; do
-                [ -e "$src" ] || continue
-                echo "Copying $src"
-                cp -v "$src" out/dist/
-              done
-            done
-          done
+          if [ ! -f "$IMAGE_PATH" ]; then
+            echo "Kernel image not found after build" >&2
+            exit 1
+          fi
 
-      - name: Locate kernel outputs
-        if: always()
+          echo "Using kernel image: $IMAGE_PATH"
+
+          WORKDIR=$(mktemp -d)
+          git clone --depth 1 https://github.com/osm0sis/AnyKernel3 "$WORKDIR/AnyKernel3"
+          rm -rf "$WORKDIR/AnyKernel3/.git"
+
+          cp "$IMAGE_PATH" "$WORKDIR/AnyKernel3/"
+          (cd "$WORKDIR/AnyKernel3" && zip -r "$PWD/../comet-kernel.zip" .)
+          mv "$WORKDIR/comet-kernel.zip" out/dist/
+
+      - name: Upload kernel package
+        uses: actions/upload-artifact@v4
+        with:
+          name: comet-kernel
+          path: out/dist/comet-kernel.zip
+
+      - name: List packaged artifacts
         run: |
-          echo "Looking for kernel outputs under out/"
-          find out -type f \( -name "Image.lz4" -o -name "Image" -o -name "dtbo.img" -o -name "boot.img" \) -print -exec ls -lh {} \; || true
-          echo "Listing out/dist:"
           ls -la out/dist || true
 
       - name: ccache stats
