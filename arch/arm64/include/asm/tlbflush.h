@@ -345,13 +345,23 @@ static inline void __flush_tlb_range(struct vm_area_struct *vma,
 		if (num >= 0) {
 			addr = __TLBI_VADDR_RANGE(start, asid, scale,
 						  num, tlb_level);
-			if (last_level) {
-				__tlbi(rvale1is, addr);
-				__tlbi_user(rvale1is, addr);
-			} else {
-				__tlbi(rvae1is, addr);
-				__tlbi_user(rvae1is, addr);
-			}
+                        if (last_level) {
+#ifdef CONFIG_ARM64_TLB_RMI
+                                __tlbi(rvale1is, addr);
+                                __tlbi_user(rvale1is, addr);
+#else
+                                __tlbi(vale1is, addr);
+                                __tlbi_user(vale1is, addr);
+#endif
+                        } else {
+#ifdef CONFIG_ARM64_TLB_RMI
+                                __tlbi(rvae1is, addr);
+                                __tlbi_user(rvae1is, addr);
+#else
+                                __tlbi(vae1is, addr);
+                                __tlbi_user(vae1is, addr);
+#endif
+                        }
 			start += __TLBI_RANGE_PAGES(num, scale) << PAGE_SHIFT;
 			pages -= __TLBI_RANGE_PAGES(num, scale);
 		}

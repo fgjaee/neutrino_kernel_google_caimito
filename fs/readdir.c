@@ -27,6 +27,8 @@
 #include "hymofs.h"
 #endif
 
+static bool should_block_name(const char *name, int namelen);
+
 
 /*
  * Note the "unsafe_put_user() semantics: we goto a
