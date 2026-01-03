@@ -113,6 +113,23 @@ jobs:
           ls -la build/kernel/kleaf
           test -f build/kernel/kleaf/BUILD.bazel
 
+      - name: Ensure build directory is not ignored by Bazel
+        run: |
+          set -euo pipefail
+          if [ -f .bazelignore ]; then
+            echo "Existing .bazelignore:"
+            cat .bazelignore
+
+            tmp_file=$(mktemp)
+            grep -v -E '^build/?$' .bazelignore > "$tmp_file"
+            mv "$tmp_file" .bazelignore
+
+            echo "Updated .bazelignore:"
+            cat .bazelignore
+          else
+            echo ".bazelignore not found, nothing to update."
+          fi
+
       - name: Build Comet kernel
         run: |
           export CCACHE_DIR="$CCACHE_DIR"
