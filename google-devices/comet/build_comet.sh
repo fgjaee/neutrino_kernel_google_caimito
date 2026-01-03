@@ -14,10 +14,11 @@ if [ "${BUILD_STAGING_KERNEL}" = "1" ]; then
   parameters="--kernel_package=@//aosp-staging"
 fi
 
-./tools/bazel --bazelrc=google-devices/comet/device.bazelrc info workspace
+BAZEL="./tools/bazel --bazelrc=google-devices/comet/device.bazelrc"
 
-exec tools/bazel run \
-    --bazelrc=google-devices/comet/device.bazelrc \
+${BAZEL} info workspace
+
+exec ${BAZEL} run \
     ${parameters} \
     --config=comet \
     //private/devices/google/comet:zumapro_comet_dist "$@"
