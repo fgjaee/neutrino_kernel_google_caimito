@@ -36,8 +36,15 @@ jobs:
       - name: Bazel rc sanity check
         run: |
           set -euo pipefail
-          echo "Bazel version"
-          ./tools/bazel --bazelrc=google-devices/comet/device.bazelrc version
+          echo "Bazel version (no rc files)"
+          ./tools/bazel --norc version
+
+          echo "Bazel startup options (no rc files)"
+          ./tools/bazel --norc help startup_options
+
+          echo "Bazelrc files expected in this workspace:"
+          echo " - Workspace .bazelrc: $(pwd)/.bazelrc (exists: $([ -f .bazelrc ] && echo yes || echo no))"
+          echo " - Device bazelrc: $(pwd)/google-devices/comet/device.bazelrc (exists: $([ -f google-devices/comet/device.bazelrc ] && echo yes || echo no))"
 
       - name: Install build dependencies
         run: |
@@ -112,6 +119,7 @@ jobs:
           echo "Verifying Kleaf package:"
           ls -la build/kernel/kleaf
           test -f build/kernel/kleaf/BUILD.bazel
+          test -f build/kernel/kleaf/kernel.bzl
 
       - name: Ensure build directory is not ignored by Bazel
         run: |
@@ -129,6 +137,33 @@ jobs:
           else
             echo ".bazelignore not found, nothing to update."
           fi
+
+      - name: Bazel preflight
+        run: |
+          set -euo pipefail
+          echo "=== Bazel Preflight ==="
+          ./tools/bazel --bazelrc=google-devices/comet/device.bazelrc version
+
+          if [ -f WORKSPACE.bazel ]; then
+            echo "Found WORKSPACE.bazel"
+          elif [ -f WORKSPACE ]; then
+            echo "Found WORKSPACE"
+          else
+            echo "No WORKSPACE file found" >&2
+            exit 1
+          fi
+
+          if [ -f .bazelignore ]; then
+            echo ".bazelignore exists; entries containing 'build':"
+            grep -n "^build[/]*$" .bazelignore || true
+          else
+            echo ".bazelignore not present"
+          fi
+
+          echo "Kleaf layout:"
+          ls -la build/kernel/kleaf
+          echo "Kleaf BUILD.bazel (first 40 lines):"
+          sed -n '1,40p' build/kernel/kleaf/BUILD.bazel
 
       - name: Build Comet kernel
         run: |
