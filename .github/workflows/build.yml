@@ -92,90 +92,22 @@ jobs:
           echo "Finding build config files:"
           find . -maxdepth 4 -type f -name "build.config.*" -print
 
-      - name: Set up Clang toolchain
-        run: |
-          set -euo pipefail
-          TOOLCHAIN_BASE="$PWD/prebuilts/clang/host/linux-x86"
-          TOOLCHAIN_DIR="$TOOLCHAIN_BASE/clang-r522817"
-
-          if [ -d "$TOOLCHAIN_DIR/bin" ] && [ -x "$TOOLCHAIN_DIR/bin/clang" ]; then
-            echo "Using existing prebuilts under $TOOLCHAIN_DIR"
-          else
-            echo "Downloading kernel Clang prebuilts..."
-            rm -rf "$TOOLCHAIN_DIR"
-            mkdir -p "$TOOLCHAIN_DIR"
-            curl -Lf "https://android.googlesource.com/kernel/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r522817.tar.gz" -o /tmp/clang.tar.gz
-            tar -C "$TOOLCHAIN_DIR" -xzf /tmp/clang.tar.gz
-          fi
-
-          echo "Toolchain contents:"
-          ls -la "$TOOLCHAIN_DIR/bin"
-
       - name: Build Comet kernel (make)
         run: |
           set -euo pipefail
           export ARCH=arm64
-          export CROSS_COMPILE=aarch64-linux-android-
+          export SUBARCH=arm64
+          export CC=clang
           export LD=ld.lld
+          export LLVM=1
+          export LLVM_IAS=1
+
           export CCACHE_DIR="$CCACHE_DIR"
           export CCACHE_EXEC="$CCACHE_EXEC"
           export USE_CCACHE=1
 
-          TOOLCHAIN_DIR="$PWD/prebuilts/clang/host/linux-x86/clang-r522817"
-          if [ -x "$TOOLCHAIN_DIR/bin/clang" ]; then
-            export PATH="$TOOLCHAIN_DIR/bin:$PATH"
-            echo "Using clang from $TOOLCHAIN_DIR"
-          else
-            echo "No prebuilts found; using system clang"
-          fi
-
-          which clang
-          make ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" comet_defconfig
-          make ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" -j"$(nproc)"
-
-      - name: Package kernel with AnyKernel3
-        run: |
-          set -euo pipefail
-          mkdir -p out/dist
-
-          IMAGE_PATH=""
-          if [ -f arch/arm64/boot/Image.lz4 ]; then
-            IMAGE_PATH=arch/arm64/boot/Image.lz4
-          elif [ -f arch/arm64/boot/Image.gz ]; then
-            IMAGE_PATH=arch/arm64/boot/Image.gz
-          elif [ -f arch/arm64/boot/Image ]; then
-            echo "Compressing Image to Image.gz for packaging"
-            gzip -c arch/arm64/boot/Image > arch/arm64/boot/Image.gz
-            IMAGE_PATH=arch/arm64/boot/Image.gz
-          else
-            echo "No kernel image found under arch/arm64/boot" >&2
-            exit 1
-          fi
-
-          if [ ! -f "$IMAGE_PATH" ]; then
-            echo "Kernel image not found after build" >&2
-            exit 1
-          fi
-
-          echo "Using kernel image: $IMAGE_PATH"
-
-          WORKDIR=$(mktemp -d)
-          git clone --depth 1 https://github.com/osm0sis/AnyKernel3 "$WORKDIR/AnyKernel3"
-          rm -rf "$WORKDIR/AnyKernel3/.git"
-
-          cp "$IMAGE_PATH" "$WORKDIR/AnyKernel3/"
-          (cd "$WORKDIR/AnyKernel3" && zip -r "$PWD/../comet-kernel.zip" .)
-          mv "$WORKDIR/comet-kernel.zip" out/dist/
-
-      - name: Upload kernel package
-        uses: actions/upload-artifact@v4
-        with:
-          name: comet-kernel
-          path: out/dist/comet-kernel.zip
-
-      - name: List packaged artifacts
-        run: |
-          ls -la out/dist || true
+          make O=out google-devices/comet/comet_defconfig
+          make O=out -j"$(nproc)"
 
       - name: ccache stats
         if: always()
@@ -188,5 +120,5 @@ jobs:
         with:
           name: kernel-dist
           path: |
-            out/dist/**
+            out/arch/arm64/boot/Image*
           if-no-files-found: error
