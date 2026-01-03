@@ -97,20 +97,14 @@ jobs:
 
       - name: Ensure Kleaf is available
         run: |
-          set -euo pipefail
           mkdir -p build/kernel
-          if [ ! -f build/kernel/kleaf/BUILD.bazel ] && [ ! -f build/kernel/kleaf/BUILD ]; then
+          if [ ! -f build/kernel/kleaf/BUILD ] && [ ! -f build/kernel/kleaf/BUILD.bazel ]; then
             echo "Kleaf missing, fetching..."
-            rm -rf /tmp/kernel_build
             git clone --depth 1 https://android.googlesource.com/kernel/build /tmp/kernel_build
-            mkdir -p build/kernel
             rm -rf build/kernel/kleaf
             cp -a /tmp/kernel_build/kleaf build/kernel/kleaf
-          else
-            echo "Kleaf already present"
           fi
 
-          echo "Verifying Kleaf directory"
           test -d build/kernel/kleaf
           ls -la build/kernel/kleaf | head -n 50
 
