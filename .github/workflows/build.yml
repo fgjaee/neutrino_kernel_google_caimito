@@ -106,6 +106,9 @@ jobs:
           export CCACHE_EXEC="$CCACHE_EXEC"
           export USE_CCACHE=1
 
+          mkdir -p arch/arm64/configs/google-devices/comet
+          cp google-devices/comet/comet_defconfig arch/arm64/configs/google-devices/comet/comet_defconfig
+
           make O=out google-devices/comet/comet_defconfig
           make O=out -j"$(nproc)"
 
