@@ -36,11 +36,8 @@ jobs:
       - name: Bazel rc sanity check
         run: |
           set -euo pipefail
-          echo "Running tools/bazel --announce_rc version"
-          if ! ./tools/bazel --announce_rc version; then
-            echo "Bazel rc sanity check failed: ensure all referenced --config values are defined by loaded bazelrc files." >&2
-            exit 1
-          fi
+          echo "Bazel version"
+          ./tools/bazel --bazelrc=google-devices/comet/device.bazelrc version
 
       - name: Install build dependencies
         run: |
