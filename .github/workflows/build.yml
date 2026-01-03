@@ -35,16 +35,8 @@ jobs:
 
       - name: Bazel rc sanity check
         run: |
-          set -euo pipefail
-          echo "Bazel version (no rc files)"
-          ./tools/bazel --norc version
-
-          echo "Bazel startup options (no rc files)"
-          ./tools/bazel --norc help startup_options
-
-          echo "Bazelrc files expected in this workspace:"
-          echo " - Workspace .bazelrc: $(pwd)/.bazelrc (exists: $([ -f .bazelrc ] && echo yes || echo no))"
-          echo " - Device bazelrc: $(pwd)/google-devices/comet/device.bazelrc (exists: $([ -f google-devices/comet/device.bazelrc ] && echo yes || echo no))"
+          ./tools/bazel version
+          ./tools/bazel help startup_options
 
       - name: Install build dependencies
         run: |
