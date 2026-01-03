@@ -95,18 +95,23 @@ jobs:
           echo "Finding build config files:"
           find . -maxdepth 4 -type f -name "build.config.*" -print
 
-      - name: Ensure Kleaf is available
+      - name: Fetch Kleaf for Bazel
         run: |
+          set -e
           mkdir -p build/kernel
-          if [ ! -f build/kernel/kleaf/BUILD ] && [ ! -f build/kernel/kleaf/BUILD.bazel ]; then
-            echo "Kleaf missing, fetching..."
+
+          if [ ! -f build/kernel/kleaf/BUILD.bazel ]; then
+            echo "Kleaf missing or invalid, fetching..."
+            rm -rf /tmp/kernel_build
             git clone --depth 1 https://android.googlesource.com/kernel/build /tmp/kernel_build
+
             rm -rf build/kernel/kleaf
             cp -a /tmp/kernel_build/kleaf build/kernel/kleaf
           fi
 
-          test -d build/kernel/kleaf
-          ls -la build/kernel/kleaf | head -n 50
+          echo "Verifying Kleaf package:"
+          ls -la build/kernel/kleaf
+          test -f build/kernel/kleaf/BUILD.bazel
 
       - name: Build Comet kernel
         run: |
