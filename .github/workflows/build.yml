@@ -16,6 +16,7 @@ jobs:
     env:
       # Pixel 9 Pro Fold is comet
       BUILD_CONFIG: google-devices/comet/build.config.comet
+      DEFCONFIG: neutrino_caimito_defconfig
       CCACHE_DIR: /home/runner/.cache/ccache
       CCACHE_EXEC: /usr/bin/ccache
 
@@ -41,18 +42,21 @@ jobs:
             bison \
             build-essential \
             ccache \
+            clang \
             curl \
             flex \
             git \
             libelf-dev \
             libncurses5-dev \
             libssl-dev \
+            lld \
+            llvm \
+            lz4 \
             python3 \
             rsync \
             unzip \
             zip \
-            zlib1g-dev \
-            lz4
+            zlib1g-dev
 
       - name: Prepare ccache
         run: |
@@ -89,49 +93,51 @@ jobs:
           echo "Finding build config files:"
           find . -maxdepth 4 -type f -name "build.config.*" -print
 
-      - name: Build Comet kernel
+      - name: Build Comet kernel (make)
         run: |
+          set -euo pipefail
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CC=clang
+          export LD=ld.lld
+          export LLVM=1
+          export LLVM_IAS=1
+
           export CCACHE_DIR="$CCACHE_DIR"
           export CCACHE_EXEC="$CCACHE_EXEC"
           export USE_CCACHE=1
-          chmod +x ./google-devices/comet/build_comet.sh
-          ./google-devices/comet/build_comet.sh
 
-      - name: Collect kernel artifacts
+          make O=out "$DEFCONFIG"
+          make O=out -j"$(nproc)"
+
+      - name: Package artifacts
         run: |
           set -euo pipefail
-          mkdir -p out/dist
+          IMAGE_PATH=""
+          for candidate in out/arch/arm64/boot/Image out/arch/arm64/boot/Image.gz out/arch/arm64/boot/Image.lz4; do
+            if [ -f "$candidate" ]; then
+              IMAGE_PATH="$candidate"
+              break
+            fi
+          done
 
-          echo "Locating dist directories produced by the build script..."
-          dist_dirs=$(find bazel-bin -type d -path "*/dist" -print || true)
-          echo "Found dist directories:"${dist_dirs:+$'\n'}"$dist_dirs"
-
-          if [ -z "$dist_dirs" ]; then
-            echo "No dist directories found under bazel-bin" >&2
+          if [ -z "$IMAGE_PATH" ]; then
+            echo "Kernel image not found in expected locations" >&2
             exit 1
           fi
 
-          echo "Copying kernel artifacts into out/dist";
-          echo "$dist_dirs" | while IFS= read -r dist_dir; do
-            [ -n "$dist_dir" ] || continue
-            echo "Inspecting $dist_dir"
-            find "$dist_dir" -maxdepth 1 -type f -print
-            for artifact in Image Image.lz4 vmlinux vmlinux.symtab dtbo.img boot.img vendor_boot.img vendor_kernel_boot.img vendor_dlkm.img system_dlkm.img modules.zip *.img *.gz *.tar.gz *.zip; do
-              for src in "$dist_dir"/$artifact; do
-                [ -e "$src" ] || continue
-                echo "Copying $src"
-                cp -v "$src" out/dist/
-              done
-            done
-          done
+          mkdir -p out/dist
+          cp "$IMAGE_PATH" out/dist/
 
-      - name: Locate kernel outputs
-        if: always()
-        run: |
-          echo "Looking for kernel outputs under out/"
-          find out -type f \( -name "Image.lz4" -o -name "Image" -o -name "dtbo.img" -o -name "boot.img" \) -print -exec ls -lh {} \; || true
-          echo "Listing out/dist:"
-          ls -la out/dist || true
+          AK3_DIR=out/dist/AnyKernel3
+          rm -rf "$AK3_DIR"
+          curl -L https://github.com/osm0sis/AnyKernel3/archive/refs/heads/master.tar.gz | tar -xz
+          mv AnyKernel3-master "$AK3_DIR"
+          cp anykernel-template/anykernel.sh "$AK3_DIR"/anykernel.sh
+          cp "$IMAGE_PATH" "$AK3_DIR"/Image
+          chmod +x "$AK3_DIR"/anykernel.sh
+
+          (cd out/dist && zip -r "AnyKernel3-comet-caimito-${GITHUB_SHA::7}.zip" AnyKernel3)
 
       - name: ccache stats
         if: always()
@@ -144,5 +150,7 @@ jobs:
         with:
           name: kernel-dist
           path: |
-            out/dist/**
+            out/arch/arm64/boot/Image*
+            out/dist/AnyKernel3-comet-caimito-*.zip
+            out/dist/Image*
           if-no-files-found: error

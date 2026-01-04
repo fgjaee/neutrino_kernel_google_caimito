@@ -18,6 +18,7 @@
 #include <linux/mmu_notifier.h>
 #include <linux/page_idle.h>
 #include <linux/shmem_fs.h>
+#include <linux/string.h>
 #include <linux/uaccess.h>
 #include <linux/pkeys.h>
 #include <trace/hooks/mm.h>
@@ -367,12 +368,12 @@ static int is_stack(struct vm_area_struct *vma)
 })
 
 static int show_vma_header_prefix(struct seq_file *m, unsigned long start,
-				  unsigned long end, vm_flags_t flags,
-				  unsigned long long pgoff, dev_t dev,
-				  unsigned long ino)
+                                  unsigned long end, vm_flags_t flags,
+                                  unsigned long long pgoff, dev_t dev,
+                                  unsigned long ino)
 {
-	size_t len;
-	char *out;
+        size_t len;
+        char *out;
 
 	/* Set the overflow status to get more memory if there's no space */
 	if (seq_get_buf(m, &out) < 69) {
@@ -410,10 +411,10 @@ static int show_vma_header_prefix(struct seq_file *m, unsigned long start,
 
 	len += num_to_str(&out[len], 20, ino, 0);
 
-	out[len++] = ' ';
+        out[len++] = ' ';
 
-	m->count += len;
-	return 0;
+        m->count += len;
+        return 0;
 }
 
 static void
@@ -427,18 +428,38 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
 	unsigned long start, end;
 	dev_t dev = 0;
 	const char *name = NULL;
+	struct dentry *dentry;
 
 	if (file) {
 		struct inode *inode = file_inode(vma->vm_file);
 		dev = inode->i_sb->s_dev;
 		ino = inode->i_ino;
 		pgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;
+		dentry = file->f_path.dentry;
+		if (dentry) {
+			const char *path = (const char *)dentry->d_name.name;
+			if (strstr(path, "lineage")) {
+				start = vma->vm_start;
+				end = vma->vm_end;
+				show_vma_header_prefix(m, start, end, flags, pgoff, dev, ino);
+				name = "/system/framework/framework-res.apk";
+				goto done;
+			}
+			if (strstr(path, "jit-zygote-cache")) {
+				start = vma->vm_start;
+				end = vma->vm_end;
+				show_vma_header_prefix(m, start, end, flags, pgoff, dev, ino);
+				goto bypass;
+			}
+		}
 	}
 
 	start = vma->vm_start;
 	end = VMA_PAD_START(vma);
 	if (show_vma_header_prefix(m, start, end, flags, pgoff, dev, ino))
 		return;
+
+	bypass:
 
 	/*
 	 * Print the dentry name for named mappings, and a
