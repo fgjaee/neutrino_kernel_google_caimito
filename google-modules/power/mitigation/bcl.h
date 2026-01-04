@@ -25,6 +25,10 @@
 #include <trace/events/power.h>
 #include "uapi/brownout_stats.h"
 
+#ifndef TRIGGERED_SOURCE_MAX
+#define TRIGGERED_SOURCE_MAX 20
+#endif
+
 #if IS_ENABLED(CONFIG_SOC_GS101)
 #define MAIN_METER_PWR_WARN0	S2MPG10_METER_PWR_WARN0
 #define SUB_METER_PWR_WARN0	S2MPG11_METER_PWR_WARN0

@@ -143,5 +143,22 @@ int exynos_pm_qos_read_req_value(int pm_qos_class, struct exynos_pm_qos_request 
 #define exynos_pm_qos_add_request(arg...)
 #define exynos_pm_qos_remove_request(a)
 #define exynos_pm_qos_update_request(a, b)
+static inline int exynos_pm_qos_add_notifier(int pm_qos_class,
+                                            struct notifier_block *notifier)
+{
+        return 0;
+}
+
+static inline int exynos_pm_qos_remove_notifier(int pm_qos_class,
+                                               struct notifier_block *notifier)
+{
+        return 0;
+}
+
+static inline int exynos_pm_qos_read_req_value(int pm_qos_class,
+                                              struct exynos_pm_qos_request *req)
+{
+        return EXYNOS_PM_QOS_DEFAULT_VALUE;
+}
 #endif
 #endif
