@@ -52,6 +52,7 @@
 #include <linux/mutex.h>
 #include <linux/nsproxy.h>
 #include <linux/poll.h>
+#include <linux/rekernel.h>
 #include <linux/debugfs.h>
 #include <linux/rbtree.h>
 #include <linux/sched/signal.h>

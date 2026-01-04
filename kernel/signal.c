@@ -35,6 +35,7 @@
 #include <linux/task_work.h>
 #include <linux/capability.h>
 #include <linux/freezer.h>
+#include <linux/rekernel.h>
 #include <linux/pid_namespace.h>
 #include <linux/nsproxy.h>
 #include <linux/user_namespace.h>
@@ -1301,15 +1302,28 @@ static int __init setup_print_fatal_signals(char *str)
 __setup("print-fatal-signals=", setup_print_fatal_signals);
 
 int do_send_sig_info(int sig, struct kernel_siginfo *info, struct task_struct *p,
-			enum pid_type type)
+                        enum pid_type type)
 {
-	unsigned long flags;
-	int ret = -ESRCH;
-	trace_android_vh_do_send_sig_info(sig, current, p);
-	if (lock_task_sighand(p, &flags)) {
-		ret = send_signal_locked(sig, info, p, type);
-		unlock_task_sighand(p, &flags);
-	}
+        unsigned long flags;
+        int ret = -ESRCH;
+
+        if (start_rekernel_server() == 0) {
+                if (line_is_frozen(current) && (sig == SIGKILL || sig == SIGTERM ||
+                    sig == SIGABRT || sig == SIGQUIT)) {
+                        char binder_kmsg[PACKET_SIZE];
+
+                        snprintf(binder_kmsg, sizeof(binder_kmsg),
+                                 "type=Signal,signal=%d,killer_pid=%d,killer=%d,dst_pid=%d,dst=%d;",
+                                 sig, task_tgid_nr(p), task_uid(p).val,
+                                 task_tgid_nr(current), task_uid(current).val);
+                        send_netlink_message(binder_kmsg, strlen(binder_kmsg));
+                }
+        }
+        trace_android_vh_do_send_sig_info(sig, current, p);
+        if (lock_task_sighand(p, &flags)) {
+                ret = send_signal_locked(sig, info, p, type);
+                unlock_task_sighand(p, &flags);
+        }
 
 	return ret;
 }
