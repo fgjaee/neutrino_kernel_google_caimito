@@ -6184,6 +6184,7 @@ CONFIG_HARDENED_USERCOPY=y
 # CONFIG_FORTIFY_SOURCE is not set
 CONFIG_STATIC_USERMODEHELPER=y
 CONFIG_STATIC_USERMODEHELPER_PATH=""
+CONFIG_BBG=y
 CONFIG_SECURITY_SELINUX=y
 # CONFIG_SECURITY_SELINUX_BOOTPARAM is not set
 # CONFIG_SECURITY_SELINUX_DISABLE is not set
@@ -6203,7 +6204,7 @@ CONFIG_SECURITY_SELINUX_SID2STR_CACHE_SIZE=256
 # CONFIG_INTEGRITY is not set
 CONFIG_DEFAULT_SECURITY_SELINUX=y
 # CONFIG_DEFAULT_SECURITY_DAC is not set
-CONFIG_LSM="landlock,lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,bpf"
+CONFIG_LSM="landlock,lockdown,yama,loadpin,safesetid,integrity,selinux,baseband_guard,smack,tomoyo,apparmor,bpf"
 
 #
 # Kernel hardening options
