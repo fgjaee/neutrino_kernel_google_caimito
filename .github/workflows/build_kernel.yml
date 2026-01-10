@@ -16,15 +16,18 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    # 1. Checkout into a specific subfolder (CRITICAL FIX)
     - name: Checkout Source
       uses: actions/checkout@v4
       with:
+        path: kernel_source
         fetch-depth: 1
 
-    - name: Fix Timestamps (prevents build loop)
+    # 2. Setup the environment (Create the "neighbor" folder)
+    - name: Prepare Directory Structure
       run: |
-        # Reset all file timestamps to prevent kconfig loop
-        find . -type f -exec touch {} +
+        # Create the google-modules folder that the Makefile is looking for
+        mkdir -p google-modules
 
     - name: Install Dependencies
       run: |
@@ -32,24 +35,35 @@ jobs:
         sudo apt-get install -y bc bison flex libssl-dev make libc6-dev libncurses5-dev
         sudo apt-get install -y openssl
 
+    # 3. Setup Toolchain (Inside the new folder)
     - name: Setup Toolchain
       run: |
+        cd kernel_source
         chmod +x setup_toolchain.sh
         ./setup_toolchain.sh
 
+    # 4. Fix Timestamps (Still good to have, but now inside the folder)
+    - name: Fix Timestamps
+      run: |
+        cd kernel_source
+        find . -type f -exec touch {} +
+
+    # 5. Build Kernel (Inside the new folder)
     - name: Build Kernel
       run: |
+        cd kernel_source
         chmod +x build_kernel.sh
         ./build_kernel.sh
 
+    # 6. Upload Image (Note the updated path!)
     - name: Upload Image
       uses: actions/upload-artifact@v4
       with:
         name: Image.lz4
-        path: out/arch/arm64/boot/Image.lz4
+        path: kernel_source/out/arch/arm64/boot/Image.lz4
 
     - name: Upload DTBs
       uses: actions/upload-artifact@v4
       with:
         name: dtbs
-        path: out/arch/arm64/boot/dts/google/*.dtb
+        path: kernel_source/out/arch/arm64/boot/dts/google/*.dtb
