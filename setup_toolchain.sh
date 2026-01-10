@@ -4,6 +4,8 @@ set -e
 CLANG_VER="r487747c"
 # Try android14-release branch first (most likely to have it)
 CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android14-release/clang-${CLANG_VER}.tar.gz"
+INSTALL_DIR="$(pwd)/toolchain/clang-${CLANG_VER}"
+
 
 echo "⬇️  Downloading toolchain from: $CLANG_URL"
 
