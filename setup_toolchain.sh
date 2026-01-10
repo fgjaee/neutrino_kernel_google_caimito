@@ -3,6 +3,7 @@ set -e
 
 CLANG_VER="r487747c"
 CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-${CLANG_VER}.tar.gz"
+
 INSTALL_DIR="$(pwd)/toolchain/clang-${CLANG_VER}"
 
 echo "🔧 Preparing to install Android Clang Toolchain ($CLANG_VER)..."
