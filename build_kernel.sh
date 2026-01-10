@@ -30,16 +30,21 @@ if [ ! -f "arch/arm64/configs/$DEFCONFIG" ]; then
     exit 1
 fi
 
-# 3. Create output directory
+# 3. Prepare Environment (Fixes the loop!)
 mkdir -p $O
+export KBUILD_BUILD_USER="Neutrino"
+export KBUILD_BUILD_HOST="GitHub-Runner"
 
-# 4. Configure
+# 4. Clean and Configure
+echo "🧹 Cleaning previous builds..."
+make O=$O mrproper
+
 echo "🛠️  Configuring kernel with $DEFCONFIG..."
-make O=$O LLVM=1 $DEFCONFIG
+make O=$O LLVM=1 LLVM_IAS=1 $DEFCONFIG
 
 # 5. Build
 echo "🚀 Building kernel (Image.lz4, dtbs, modules)..."
-make O=$O LLVM=1 -j$(nproc) Image.lz4 dtbs modules
+make O=$O LLVM=1 LLVM_IAS=1 -j$(nproc) Image.lz4 dtbs modules
 
 echo ""
 echo "✅ Build completed successfully!"
