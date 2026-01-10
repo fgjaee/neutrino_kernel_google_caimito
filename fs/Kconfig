@@ -5,6 +5,13 @@
 
 menu "File systems"
 
+config KSU_SUSFS
+	bool "SUSFS support"
+	default y
+	help
+	  Enable SUSFS support for KernelSU.
+
+
 # Use unaligned word dcache accesses
 config DCACHE_WORD_ACCESS
        bool
@@ -384,7 +391,16 @@ source "fs/nls/Kconfig"
 source "fs/dlm/Kconfig"
 source "fs/unicode/Kconfig"
 
+
+source "fs/mountify/nuke_ext4_lkm/Kconfig"
+
 config IO_WQ
 	bool
+
+config HYMOFS
+	bool "HymoFS support"
+	default y
+	help
+	  HymoFS is a kernel-level path manipulation and hiding framework.
 
 endmenu

@@ -1,0 +1,47 @@
+#!/bin/bash
+set -e
+
+# Configuration
+export ARCH=arm64
+export SUBARCH=arm64
+export O=out
+export DEFCONFIG=neutrino_defconfig
+
+# 1. Check for compiler
+CLANG_VER="r487747c"
+LOCAL_CLANG="$(pwd)/toolchain/clang-${CLANG_VER}/bin"
+
+if [ -d "$LOCAL_CLANG" ]; then
+    export PATH="$LOCAL_CLANG:$PATH"
+    echo "ℹ️  Using local toolchain: $LOCAL_CLANG"
+fi
+
+if ! command -v clang &> /dev/null; then
+    echo "❌ Error: 'clang' compiler not found."
+    echo "   Please run './setup_toolchain.sh' to download it automatically."
+    exit 1
+fi
+
+echo "✅ Found compiler: $(clang --version | head -n 1)"
+
+# 2. Check for defconfig
+if [ ! -f "arch/arm64/configs/$DEFCONFIG" ]; then
+    echo "❌ Error: Defconfig '$DEFCONFIG' not found!"
+    exit 1
+fi
+
+# 3. Create output directory
+mkdir -p $O
+
+# 4. Configure
+echo "🛠️  Configuring kernel with $DEFCONFIG..."
+make O=$O LLVM=1 $DEFCONFIG
+
+# 5. Build
+echo "🚀 Building kernel (Image.lz4, dtbs, modules)..."
+make O=$O LLVM=1 -j$(nproc) Image.lz4 dtbs modules
+
+echo ""
+echo "✅ Build completed successfully!"
+echo "   Kernel Image: $O/arch/arm64/boot/Image.lz4"
+echo "   DTBs:         $O/arch/arm64/boot/dts/google/"

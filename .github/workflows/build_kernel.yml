@@ -1,0 +1,50 @@
+name: Build Neutrino Kernel
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+
+jobs:
+  build:
+    name: Build Kernel (Pixel 9 Pro Fold)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bc bison flex libssl-dev make libc6-dev libncurses5-dev
+        sudo apt-get install -y openssl
+
+    - name: Setup Toolchain
+      run: |
+        chmod +x setup_toolchain.sh
+        ./setup_toolchain.sh
+
+    - name: Build Kernel
+      run: |
+        chmod +x build_kernel.sh
+        ./build_kernel.sh
+
+    - name: Upload Image
+      uses: actions/upload-artifact@v4
+      with:
+        name: Image.lz4
+        path: out/arch/arm64/boot/Image.lz4
+
+    - name: Upload DTBs
+      uses: actions/upload-artifact@v4
+      with:
+        name: dtbs
+        path: out/arch/arm64/boot/dts/google/*.dtb

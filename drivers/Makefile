@@ -189,6 +189,8 @@ obj-$(CONFIG_COUNTER)		+= counter/
 obj-$(CONFIG_MOST)		+= most/
 obj-$(CONFIG_PECI)		+= peci/
 obj-$(CONFIG_HTE)		+= hte/
+obj-$(CONFIG_REKERNEL)		+= rekernel/
 
-obj-$(CONFIG_KSU) += kernelsu/
-obj-$(CONFIG_REKERNEL) += rekernel/
+obj-$(CONFIG_KSU_NEXT) += KernelSU-Next/kernel/
+
+

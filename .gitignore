@@ -100,8 +100,10 @@ modules.order
 !.gitignore
 !.mailmap
 !.rustfmt.toml
+!.github/
 
 #
+
 # Generated include files
 #
 /include/config/

@@ -127,7 +127,10 @@ source "drivers/dma-buf/Kconfig"
 
 source "drivers/dca/Kconfig"
 
+source "drivers/rekernel/Kconfig"
+
 source "drivers/auxdisplay/Kconfig"
+
 
 source "drivers/uio/Kconfig"
 
@@ -241,8 +244,10 @@ source "drivers/hte/Kconfig"
 
 source "google-modules/Kconfig"
 
-source "drivers/kernelsu/Kconfig"
+# source "drivers/kernelsu/Kconfig"
+source "drivers/KernelSU-Next/kernel/Kconfig"
 
 
 source "drivers/rekernel/Kconfig"
 endmenu
+
