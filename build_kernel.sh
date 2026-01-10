@@ -35,9 +35,13 @@ mkdir -p $O
 export KBUILD_BUILD_USER="Neutrino"
 export KBUILD_BUILD_HOST="GitHub-Runner"
 
-# 4. Clean and Configure
-echo "🧹 Cleaning previous builds..."
-make O=$O mrproper
+# 4. Clean and Configure (skip mrproper on fresh builds)
+if [ -f "$O/.config" ]; then
+    echo "🧹 Cleaning previous builds..."
+    make O=$O mrproper
+else
+    echo "ℹ️  Fresh build - skipping cleanup"
+fi
 
 echo "🛠️  Configuring kernel with $DEFCONFIG..."
 make O=$O LLVM=1 LLVM_IAS=1 $DEFCONFIG
