@@ -5,10 +5,11 @@ SUBLEVEL = 159
 EXTRAVERSION =
 NAME = Curry Ramen
 
-export KCONFIG_EXT_PREFIX := google-devices/zumapro/
-export KCONFIG_EXT_SUFFIX := .zumapro
-export KCONFIG_SOC_GS_PREFIX := google-modules/soc/gs/
-export KCONFIG_EXT_MODULES_PREFIX := ./
+# TEMPORARILY DISABLED - Testing if this causes the build loop
+# export KCONFIG_EXT_PREFIX := google-devices/zumapro/
+# export KCONFIG_EXT_SUFFIX := .zumapro
+# export KCONFIG_SOC_GS_PREFIX := google-modules/soc/gs/
+# export KCONFIG_EXT_MODULES_PREFIX := ./
 export KBUILD_BUILD_TIMESTAMP := Mon Oct 13 22:28:16 UTC 2025
 KCFLAGS += -D__ANDROID_COMMON_KERNEL__
 
