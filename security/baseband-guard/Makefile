@@ -26,15 +26,9 @@ endif
 
 # $(shell cd $(BBG_DIR) && test -f .git/shallow && $(GIT_BIN) fetch --unshallow)
 
-REPO_LINK := $(shell cd $(BBG_DIR) && $(GIT_BIN) remote get-url origin 2>/dev/null)
-COMMIT_SHA := $(shell cd $(BBG_DIR) && $(GIT_BIN) rev-parse --short=8 HEAD 2>/dev/null)
-
-ifeq ($(strip $(REPO_LINK)),)
-  REPO_LINK := unknown
-endif
-ifeq ($(strip $(COMMIT_SHA)),)
-  COMMIT_SHA := unknown
-endif
+# Hardcoded to avoid git shell commands that break in-tree builds
+REPO_LINK := https://github.com/vc-teahouse/Baseband-guard
+COMMIT_SHA := neutrino
 
 ifeq ($(shell grep -q "file_ioctl_compat" $(srctree)/include/linux/lsm_hook_defs.h $(srctree)/include/linux/lsm_hooks.h 2>/dev/null && echo true),true)
     ccflags-y += -DBB_HAS_IOCTL_COMPAT
