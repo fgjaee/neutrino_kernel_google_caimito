@@ -191,6 +191,6 @@ obj-$(CONFIG_PECI)		+= peci/
 obj-$(CONFIG_HTE)		+= hte/
 obj-$(CONFIG_REKERNEL)		+= rekernel/
 
-obj-$(CONFIG_KSU_NEXT) += KernelSU-Next/kernel/
+obj-$(CONFIG_KSU) += KernelSU-Next/kernel/
 
 
