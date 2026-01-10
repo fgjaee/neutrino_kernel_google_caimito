@@ -2,30 +2,27 @@
 set -e
 
 CLANG_VER="r487747c"
-CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master-kernel-build-2022/clang-${CLANG_VER}.tar.gz"
+# Try android14-release branch first (most likely to have it)
+CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android14-release/clang-${CLANG_VER}.tar.gz"
 
+echo "⬇️  Downloading toolchain from: $CLANG_URL"
 
-INSTALL_DIR="$(pwd)/toolchain/clang-${CLANG_VER}"
-
-echo "🔧 Preparing to install Android Clang Toolchain ($CLANG_VER)..."
-
-if [ -d "$INSTALL_DIR/bin" ]; then
-    echo "✅ Toolchain already exists at: $INSTALL_DIR"
-    echo "   You can proceed to build."
-    exit 0
-fi
-
+# Create directory
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-echo "⬇️  Downloading toolchain (this may take a while)..."
-# Try curl, fall back to wget
+# Download with curl, failing on HTTP errors (-f)
 if command -v curl &> /dev/null; then
-    curl -L "$CLANG_URL" | tar -xz
+    curl -f -L "$CLANG_URL" | tar -xz || {
+        echo "⚠️  Primary URL failed. Trying 'master' branch fallback..."
+        rm -rf * # Clear partial files
+        FALLBACK_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-${CLANG_VER}.tar.gz"
+        curl -f -L "$FALLBACK_URL" | tar -xz
+    }
 elif command -v wget &> /dev/null; then
     wget -O - "$CLANG_URL" | tar -xz
 else
-    echo "❌ Error: Neither 'curl' nor 'wget' found. Please install one of them."
+    echo "❌ Error: Neither 'curl' nor 'wget' found."
     exit 1
 fi
 
