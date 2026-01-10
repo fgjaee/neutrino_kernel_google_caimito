@@ -41,6 +41,28 @@ These kernel options are **disabled** to prevent root detection:
 - `CONFIG_FTRACE` - Disabled (hides tracing)
 - `CONFIG_PROFILING` - Disabled (hides profiling)
 
+### 🌐 VPN & Hotspot Hiding
+
+**TTL Modification** (for hotspot hiding):
+- `CONFIG_IP_NF_TARGET_TTL=y` - IPv4 TTL modification
+- `CONFIG_IP6_NF_TARGET_HL=y` - IPv6 Hop Limit modification
+
+**VPN Interface Hiding** (via SUSFS):
+Use the SukiSU Manager to add these paths to the SUSFS hide list:
+```
+/dev/tun
+/dev/net/tun
+/sys/class/net/tun*
+/proc/net/dev (filter tun entries)
+```
+
+**Hotspot TTL Fix** (after boot):
+```bash
+# Set TTL to 64 (same as phone) to hide tethering
+iptables -t mangle -A POSTROUTING -o rmnet+ -j TTL --ttl-set 64
+ip6tables -t mangle -A POSTROUTING -o rmnet+ -j HL --hl-set 64
+```
+
 ## 📱 Device Compatibility
 
 | Property | Value |
