@@ -1,4 +1,4 @@
-# Kernel Build Guide
+# Kernel Build Guide (Build Triggered)
 
 This guide will help you build the **Neutrino Kernel (Pixel 9 Pro Fold)** with **SukiSU Ultra** integration.
 
