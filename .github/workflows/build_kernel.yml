@@ -21,6 +21,11 @@ jobs:
       with:
         fetch-depth: 1
 
+    - name: Fix Timestamps (prevents build loop)
+      run: |
+        # Reset all file timestamps to prevent kconfig loop
+        find . -type f -exec touch {} +
+
     - name: Install Dependencies
       run: |
         sudo apt-get update
