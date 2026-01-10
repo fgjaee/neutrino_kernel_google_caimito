@@ -46,9 +46,9 @@ fi
 echo "🛠️  Configuring kernel with $DEFCONFIG..."
 make O=$O LLVM=1 LLVM_IAS=1 $DEFCONFIG
 
-# 5. Build
-echo "🚀 Building kernel (Image.lz4, dtbs, modules)..."
-make O=$O LLVM=1 LLVM_IAS=1 -j$(nproc) Image.lz4 dtbs modules
+# 5. Build (modules disabled - testing if google-modules causes loop)
+echo "🚀 Building kernel (Image.lz4, dtbs only - modules skipped)..."
+make O=$O LLVM=1 LLVM_IAS=1 -j$(nproc) Image.lz4 dtbs
 
 echo ""
 echo "✅ Build completed successfully!"
