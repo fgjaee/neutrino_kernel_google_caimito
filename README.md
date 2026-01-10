@@ -1,150 +1,99 @@
-# How do I submit patches to Android Common Kernels
+# Neutrino Kernel for Pixel 9 Pro Fold (Caimito)
 
-1. BEST: Make all of your changes to upstream Linux. If appropriate, backport to the stable releases.
-   These patches will be merged automatically in the corresponding common kernels. If the patch is already
-   in upstream Linux, post a backport of the patch that conforms to the patch requirements below.
-   - Do not send patches upstream that contain only symbol exports. To be considered for upstream Linux,
-additions of `EXPORT_SYMBOL_GPL()` require an in-tree modular driver that uses the symbol -- so include
-the new driver or changes to an existing driver in the same patchset as the export.
-   - When sending patches upstream, the commit message must contain a clear case for why the patch
-is needed and beneficial to the community. Enabling out-of-tree drivers or functionality is not
-not a persuasive case.
+[![Build Kernel](https://github.com/fgjaee/neutrino_kernel_google_caimito/actions/workflows/build_kernel.yml/badge.svg)](https://github.com/fgjaee/neutrino_kernel_google_caimito/actions/workflows/build_kernel.yml)
 
-2. LESS GOOD: Develop your patches out-of-tree (from an upstream Linux point-of-view). Unless these are
-   fixing an Android-specific bug, these are very unlikely to be accepted unless they have been
-   coordinated with kernel-team@android.com. If you want to proceed, post a patch that conforms to the
-   patch requirements below.
+A custom kernel for the **Google Pixel 9 Pro Fold** (codename: caimito) with integrated root solution and maximum stealth features.
 
-# Common Kernel patch requirements
+## ✨ Features
 
-- All patches must conform to the Linux kernel coding standards and pass `scripts/checkpatch.pl`
-- Patches shall not break gki_defconfig or allmodconfig builds for arm, arm64, x86, x86_64 architectures
-(see  https://source.android.com/setup/build/building-kernels)
-- If the patch is not merged from an upstream branch, the subject must be tagged with the type of patch:
-`UPSTREAM:`, `BACKPORT:`, `FROMGIT:`, `FROMLIST:`, or `ANDROID:`.
-- All patches must have a `Change-Id:` tag (see https://gerrit-review.googlesource.com/Documentation/user-changeid.html)
-- If an Android bug has been assigned, there must be a `Bug:` tag.
-- All patches must have a `Signed-off-by:` tag by the author and the submitter
+### 🔓 Root Solution
+| Feature | Status | Description |
+|---------|--------|-------------|
+| **KernelSU-Next** | ✅ Enabled | Next-generation kernel-level root |
+| **SukiSU-Ultra (SUSFS)** | ✅ Full Stealth | Complete SUSFS integration with all hiding features |
 
-Additional requirements are listed below based on patch type
+### 🛡️ SUSFS Stealth Configuration
+All SUSFS features are enabled for maximum root hiding:
 
-## Requirements for backports from mainline Linux: `UPSTREAM:`, `BACKPORT:`
+- `CONFIG_KSU_SUSFS` - Main SUSFS support
+- `CONFIG_KSU_SUSFS_SUS_PATH` - Hide specific file paths
+- `CONFIG_KSU_SUSFS_SUS_MOUNT` - Hide suspicious mount points
+- `CONFIG_KSU_SUSFS_SUS_KSTAT` - Hide file statistics
+- `CONFIG_KSU_SUSFS_SUS_MAP` - Hide memory mappings
+- `CONFIG_KSU_SUSFS_SPOOF_UNAME` - Spoof kernel version info
+- `CONFIG_KSU_SUSFS_ENABLE_LOG` - Enable logging
+- `CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS` - Hide kernel symbols
+- `CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG` - Spoof boot parameters
+- `CONFIG_KSU_SUSFS_OPEN_REDIRECT` - Redirect file opens
 
-- If the patch is a cherry-pick from Linux mainline with no changes at all
-    - tag the patch subject with `UPSTREAM:`.
-    - add upstream commit information with a `(cherry picked from commit ...)` line
-    - Example:
-        - if the upstream commit message is
-```
-        important patch from upstream
+### 🔒 Security & Protection
+| Feature | Status | Description |
+|---------|--------|-------------|
+| **Baseband Guard** | ✅ Enabled | Anti-format protection for critical partitions |
+| **Re-Kernel** | ✅ Enabled | Enhanced process management |
+| **HymoFS** | ✅ Enabled | Kernel-level path manipulation |
+| **Mountify (Nuke EXT4)** | ✅ Enabled | Mount point hiding |
 
-        This is the detailed description of the important patch
+### 🔧 Stealth Hardening
+These kernel options are **disabled** to prevent root detection:
 
-        Signed-off-by: Fred Jones <fred.jones@foo.org>
-```
->- then Joe Smith would upload the patch for the common kernel as
-```
-        UPSTREAM: important patch from upstream
+- `CONFIG_IKCONFIG_PROC` - Disabled (hides kernel config)
+- `CONFIG_FTRACE` - Disabled (hides tracing)
+- `CONFIG_PROFILING` - Disabled (hides profiling)
 
-        This is the detailed description of the important patch
+## 📱 Device Compatibility
 
-        Signed-off-by: Fred Jones <fred.jones@foo.org>
+| Property | Value |
+|----------|-------|
+| Device | Google Pixel 9 Pro Fold |
+| Codename | caimito |
+| Kernel Version | 6.1.159 |
+| Android Version | Android 15 |
+| Architecture | arm64 |
 
-        Bug: 135791357
-        Change-Id: I4caaaa566ea080fa148c5e768bb1a0b6f7201c01
-        (cherry picked from commit c31e73121f4c1ec41143423ac6ce3ce6dafdcec1)
-        Signed-off-by: Joe Smith <joe.smith@foo.org>
-```
+## 🚀 Building
 
-- If the patch requires any changes from the upstream version, tag the patch with `BACKPORT:`
-instead of `UPSTREAM:`.
-    - use the same tags as `UPSTREAM:`
-    - add comments about the changes under the `(cherry picked from commit ...)` line
-    - Example:
-```
-        BACKPORT: important patch from upstream
+### Option 1: GitHub Actions (Recommended)
+1. Fork this repository
+2. Go to **Actions** tab
+3. Click **"Run workflow"**
+4. Download artifacts when complete
 
-        This is the detailed description of the important patch
+### Option 2: Local Build
+```bash
+# Setup toolchain
+./setup_toolchain.sh
 
-        Signed-off-by: Fred Jones <fred.jones@foo.org>
-
-        Bug: 135791357
-        Change-Id: I4caaaa566ea080fa148c5e768bb1a0b6f7201c01
-        (cherry picked from commit c31e73121f4c1ec41143423ac6ce3ce6dafdcec1)
-        [joe: Resolved minor conflict in drivers/foo/bar.c ]
-        Signed-off-by: Joe Smith <joe.smith@foo.org>
+# Build kernel
+./build_kernel.sh
 ```
 
-## Requirements for other backports: `FROMGIT:`, `FROMLIST:`,
+## 📦 Output Files
 
-- If the patch has been merged into an upstream maintainer tree, but has not yet
-been merged into Linux mainline
-    - tag the patch subject with `FROMGIT:`
-    - add info on where the patch came from as `(cherry picked from commit <sha1> <repo> <branch>)`. This
-must be a stable maintainer branch (not rebased, so don't use `linux-next` for example).
-    - if changes were required, use `BACKPORT: FROMGIT:`
-    - Example:
-        - if the commit message in the maintainer tree is
-```
-        important patch from upstream
+After building:
+- `out/arch/arm64/boot/Image.lz4` - Kernel image
+- `out/arch/arm64/boot/dts/google/*.dtb` - Device tree blobs
 
-        This is the detailed description of the important patch
+## ⚠️ Flashing Instructions
 
-        Signed-off-by: Fred Jones <fred.jones@foo.org>
-```
->- then Joe Smith would upload the patch for the common kernel as
-```
-        FROMGIT: important patch from upstream
+> **CRITICAL**: Flash to `vendor_kernel_boot`, NOT `boot.img`!
 
-        This is the detailed description of the important patch
-
-        Signed-off-by: Fred Jones <fred.jones@foo.org>
-
-        Bug: 135791357
-        (cherry picked from commit 878a2fd9de10b03d11d2f622250285c7e63deace
-         https://git.kernel.org/pub/scm/linux/kernel/git/foo/bar.git test-branch)
-        Change-Id: I4caaaa566ea080fa148c5e768bb1a0b6f7201c01
-        Signed-off-by: Joe Smith <joe.smith@foo.org>
+```bash
+# Extract vendor_kernel_boot from factory image
+# Replace Image.lz4 in the extracted partition
+# Repack and flash:
+fastboot flash vendor_kernel_boot vendor_kernel_boot.img
 ```
 
+## 📄 License
 
-- If the patch has been submitted to LKML, but not accepted into any maintainer tree
-    - tag the patch subject with `FROMLIST:`
-    - add a `Link:` tag with a link to the submittal on lore.kernel.org
-    - add a `Bug:` tag with the Android bug (required for patches not accepted into
-a maintainer tree)
-    - if changes were required, use `BACKPORT: FROMLIST:`
-    - Example:
-```
-        FROMLIST: important patch from upstream
+This kernel is based on the Android Common Kernel and is licensed under the GPL-2.0 license.
 
-        This is the detailed description of the important patch
+## 🙏 Credits
 
-        Signed-off-by: Fred Jones <fred.jones@foo.org>
-
-        Bug: 135791357
-        Link: https://lore.kernel.org/lkml/20190619171517.GA17557@someone.com/
-        Change-Id: I4caaaa566ea080fa148c5e768bb1a0b6f7201c01
-        Signed-off-by: Joe Smith <joe.smith@foo.org>
-```
-
-## Requirements for Android-specific patches: `ANDROID:`
-
-- If the patch is fixing a bug to Android-specific code
-    - tag the patch subject with `ANDROID:`
-    - add a `Fixes:` tag that cites the patch with the bug
-    - Example:
-```
-        ANDROID: fix android-specific bug in foobar.c
-
-        This is the detailed description of the important fix
-
-        Fixes: 1234abcd2468 ("foobar: add cool feature")
-        Change-Id: I4caaaa566ea080fa148c5e768bb1a0b6f7201c01
-        Signed-off-by: Joe Smith <joe.smith@foo.org>
-```
-
-- If the patch is a new feature
-    - tag the patch subject with `ANDROID:`
-    - add a `Bug:` tag with the Android bug (required for android-specific features)
-
+- **KernelSU-Next** - Kernel root solution
+- **SukiSU-Ultra** - SUSFS stealth features
+- **Baseband Guard** - Partition protection
+- **Re-Kernel** - Process management
+- **HymoFS** - Path manipulation
+- **Mountify** - Mount hiding
