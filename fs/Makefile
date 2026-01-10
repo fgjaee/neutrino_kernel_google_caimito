@@ -145,6 +145,6 @@ obj-$(CONFIG_ZONEFS_FS)		+= zonefs/
 obj-$(CONFIG_HYMOFS)		+= hymofs.o
 
 
-obj-$(CONFIG_MOUNTIFY)		+= mountify/nuke_ext4_lkm/
+obj-$(CONFIG_NUKE_EXT4_SYSFS)		+= mountify/nuke_ext4_lkm/
 
 

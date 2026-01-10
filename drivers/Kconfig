@@ -248,6 +248,6 @@ source "google-modules/Kconfig"
 source "drivers/KernelSU-Next/kernel/Kconfig"
 
 
-source "drivers/rekernel/Kconfig"
+
 endmenu
 
