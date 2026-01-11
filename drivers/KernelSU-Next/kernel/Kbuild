@@ -51,6 +51,14 @@ ifndef KSU_NEXT_MANAGER_HASH
 KSU_NEXT_MANAGER_HASH := 79e590113c4c4c0c222978e413a5faa801666957b1212a328e46c00c69821bf7
 endif
 
+ifndef KSU_MANAGER_SIZES
+KSU_MANAGER_SIZES := $(KSU_NEXT_MANAGER_SIZE),0x35c
+endif
+
+ifndef KSU_MANAGER_HASHES
+KSU_MANAGER_HASHES := "$(KSU_NEXT_MANAGER_HASH)","947ae944f3de4ed4c21a7e4f7953ecf351bfa2b36239da37a34111ad29993eef"
+endif
+
 ifdef KSU_MANAGER_PACKAGE
 ccflags-y += -DKSU_MANAGER_PACKAGE=\"$(KSU_MANAGER_PACKAGE)\"
 $(info -- KernelSU-Next Manager package name: $(KSU_MANAGER_PACKAGE))
@@ -58,9 +66,11 @@ endif
 
 $(info -- KernelSU-Next Manager signature size: $(KSU_NEXT_MANAGER_SIZE))
 $(info -- KernelSU-Next Manager signature hash: $(KSU_NEXT_MANAGER_HASH))
+$(info -- KernelSU Manager signature sizes: $(KSU_MANAGER_SIZES))
+$(info -- KernelSU Manager signature hashes: $(KSU_MANAGER_HASHES))
 
-ccflags-y += -DEXPECTED_MANAGER_SIZE=$(KSU_NEXT_MANAGER_SIZE)
-ccflags-y += -DEXPECTED_MANAGER_HASH=\"$(KSU_NEXT_MANAGER_HASH)\"
+ccflags-y += -DKSU_MANAGER_SIZES=$(KSU_MANAGER_SIZES)
+ccflags-y += -DKSU_MANAGER_HASHES=$(KSU_MANAGER_HASHES)
 
 ccflags-y += -Wno-strict-prototypes -Wno-int-conversion -Wno-gcc-compat -Wno-missing-prototypes
 ccflags-y += -Wno-declaration-after-statement -Wno-unused-function -Wno-unused-variable
