@@ -32,7 +32,7 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc bison flex libssl-dev make libc6-dev libncurses5-dev
+        sudo apt-get install -y bc bison flex libssl-dev make libc6-dev libncurses5-dev lz4
         sudo apt-get install -y openssl
 
     # 3. Setup Toolchain (Inside the new folder)
