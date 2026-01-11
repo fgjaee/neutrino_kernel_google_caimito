@@ -10,9 +10,10 @@ ifneq ($(wildcard $(objtree)/security/selinux/flask.h),)
   $(info -- Baseband-guard: flask.h found, skip generation)
 else
   $(info -- Baseband-guard: flask.h not found, starting generation)
-  $(shell $(HOSTCC) -I$(srctree)/scripts/selinux/genheaders -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89  -I$(srctree)/include/uapi  -I$(srctree)/include  -I$(srctree)/security/selinux/include -o $(objtree)/genheaders $(srctree)/scripts/selinux/genheaders/genheaders.c)
-  $(shell $(objtree)/genheaders flask.h av_permissions.h)
-  $(shell mv $(objtree)/flask.h $(objtree)/av_permissions.h $(objtree)/security/selinux)
+  $(shell mkdir -p $(objtree)/security/selinux)
+  $(shell $(HOSTCC) -I$(srctree)/scripts/selinux/genheaders -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89  -I$(srctree)/include/uapi  -I$(srctree)/include  -I$(srctree)/security/selinux/include -o $(objtree)/genheaders $(srctree)/scripts/selinux/genheaders/genheaders.c 2>/dev/null || true)
+  $(shell test -x $(objtree)/genheaders && $(objtree)/genheaders flask.h av_permissions.h 2>/dev/null || true)
+  $(shell test -f $(objtree)/flask.h && test -f $(objtree)/av_permissions.h && mv $(objtree)/flask.h $(objtree)/av_permissions.h $(objtree)/security/selinux/ 2>/dev/null || true)
 endif
 
 GIT_BIN := /usr/bin/env PATH="$$PATH":/usr/bin:/usr/local/bin git
@@ -23,7 +24,7 @@ else
   BBG_DIR := $(srctree)/$(src)
 endif
 
-$(shell cd $(BBG_DIR) && test -f .git/shallow && $(GIT_BIN) fetch --unshallow)
+$(shell cd $(BBG_DIR) 2>/dev/null && test -f .git/shallow && timeout 30 $(GIT_BIN) fetch --unshallow 2>/dev/null || true)
 
 REPO_LINK := $(shell cd $(BBG_DIR) && $(GIT_BIN) remote get-url origin 2>/dev/null)
 COMMIT_SHA := $(shell cd $(BBG_DIR) && $(GIT_BIN) rev-parse --short=8 HEAD 2>/dev/null)
