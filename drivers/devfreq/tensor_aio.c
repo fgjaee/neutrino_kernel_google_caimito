@@ -522,6 +522,7 @@ zumapro_pmu_read(struct pmu_stat *stat)
 {
 	register u64 cntpct, const_cyc, cpu_cyc, mem_cyc;
 
+#ifdef CONFIG_ARM64_AMU_EXTN
 	asm volatile("mrs %0, cntpct_el0\n\t"
 		     "mrs %1, amevcntr01_el0\n\t"
 		     "mrs %2, amevcntr00_el0\n\t"
@@ -529,6 +530,13 @@ zumapro_pmu_read(struct pmu_stat *stat)
 		     "isb"
 		     : "=r" (cntpct), "=r" (const_cyc), "=r" (cpu_cyc),
 		       "=r" (mem_cyc));
+#else
+	asm volatile("mrs %0, cntpct_el0\n\t"
+		     : "=r" (cntpct));
+	const_cyc = cntpct;
+	cpu_cyc = 0;
+	mem_cyc = 0;
+#endif
 
 	*stat = (typeof(*stat)){ cntpct, const_cyc, cpu_cyc, mem_cyc };
 }
@@ -538,6 +546,7 @@ zuma_with_const_pmu_read(struct pmu_stat *stat)
 {
 	register u64 cntpct, const_cyc, cpu_cyc, mem_cyc;
 
+#ifdef CONFIG_ARM64_AMU_EXTN
 	asm volatile("isb\n\t"
 		     "mrs %0, cntpct_el0\n\t"
 		     "mrs %1, amevcntr01_el0\n\t"
@@ -546,6 +555,13 @@ zuma_with_const_pmu_read(struct pmu_stat *stat)
 		     "isb"
 		     : "=r" (cntpct), "=r" (const_cyc), "=r" (cpu_cyc),
 		       "=r" (mem_cyc));
+#else
+	asm volatile("mrs %0, cntpct_el0\n\t"
+		     : "=r" (cntpct));
+	const_cyc = cntpct;
+	cpu_cyc = 0;
+	mem_cyc = 0;
+#endif
 
 	*stat = (typeof(*stat)){ cntpct, const_cyc, cpu_cyc, mem_cyc };
 }
@@ -555,12 +571,19 @@ zuma_no_const_pmu_read(struct pmu_stat *stat)
 {
 	register u64 cntpct, cpu_cyc, mem_cyc;
 
+#ifdef CONFIG_ARM64_AMU_EXTN
 	asm volatile("isb\n\t"
 		     "mrs %0, cntpct_el0\n\t"
 		     "mrs %1, amevcntr00_el0\n\t"
 		     "mrs %2, amevcntr03_el0\n\t"
 		     "isb"
 		     : "=r" (cntpct), "=r" (cpu_cyc), "=r" (mem_cyc));
+#else
+	asm volatile("mrs %0, cntpct_el0\n\t"
+		     : "=r" (cntpct));
+	cpu_cyc = 0;
+	mem_cyc = 0;
+#endif
 
 	*stat = (typeof(*stat)){ cntpct, cntpct, cpu_cyc, mem_cyc };
 }
