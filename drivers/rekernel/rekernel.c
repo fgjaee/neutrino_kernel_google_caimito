@@ -35,11 +35,13 @@ static const char* binder_type[] = {
 	"transaction",
 	"free_buffer_full",
 };
+/*
 static const char* rpc_type[] = {
 	"SYNC_BINDER_REPLY",
 	"SYNC_BINDER",
 	"FREE_BUFFER_FULL",
 };
+*/
 static struct sock* netlink_socket;
 extern struct net init_net;
 static unsigned long netlink_unit = 0;
@@ -171,7 +173,7 @@ struct netlink_kernel_cfg cfg = {
 };
 #ifdef CONFIG_PROC_FS
 static int rekernel_unit_show(struct seq_file* m, void* v) {
-	seq_printf(m, "%d\n", netlink_unit);
+	seq_printf(m, "%lu\n", netlink_unit);
 	return LINE_SUCCESS;
 }
 static int rekernel_unit_open(struct inode* inode, struct file* file) {
@@ -206,7 +208,7 @@ static int start_rekernel(void) {
 		pr_err("Failed to create Re:Kernel server!\n");
 		return -LINE_ERROR;
 	}
-	pr_info("Created Re:Kernel server! NETLINK UNIT: %d\n", netlink_unit);
+	pr_info("Created Re:Kernel server! NETLINK UNIT: %lu\n", netlink_unit);
 
 #ifdef CONFIG_PROC_FS
 	rekernel_dir = proc_mkdir("rekernel", NULL);
@@ -214,7 +216,7 @@ static int start_rekernel(void) {
 		pr_err("create /proc/rekernel failed!\n");
 	} else {
 		char buff[32];
-		sprintf(buff, "%d", netlink_unit);
+		sprintf(buff, "%lu", netlink_unit);
 		rekernel_unit_entry = proc_create(buff, 0644, rekernel_dir, &rekernel_unit_fops);
 		if (!rekernel_unit_entry) {
 			pr_err("create rekernel unit failed!\n");
@@ -277,7 +279,7 @@ void rekernel_report(int reporttype, int type, pid_t src_pid, struct task_struct
 			}
 			snprintf(binder_kmsg, sizeof(binder_kmsg), "type=Binder,bindertype=%s,oneway=%d,from_pid=%d,from=%d,target_pid=%d,target=%d,rpc_name=%s,code=%d;", binder_type[type], oneway, src_pid, task_uid(src).val, dst_pid, task_uid(dst).val, buf, tr->code);
 		} else {
-			snprintf(binder_kmsg, sizeof(binder_kmsg), "type=Binder,bindertype=%s,oneway=%d,from_pid=%d,from=%d,target_pid=%d,target=%d;", binder_type[type], oneway, src_pid, task_uid(src).val, dst_pid, task_uid(dst).val, rpc_type[type], -1);
+			snprintf(binder_kmsg, sizeof(binder_kmsg), "type=Binder,bindertype=%s,oneway=%d,from_pid=%d,from=%d,target_pid=%d,target=%d;", binder_type[type], oneway, src_pid, task_uid(src).val, dst_pid, task_uid(dst).val);
 		}
 		break;
 	case SIGNAL:

@@ -1,3 +1,4 @@
+#define BBG_USE_DEFINE_LSM 1
 #define BB_ENFORCING 1
 
 #ifdef CONFIG_BBG_DEBUG

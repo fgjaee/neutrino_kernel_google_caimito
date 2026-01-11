@@ -142,7 +142,7 @@ obj-$(CONFIG_EROFS_FS)		+= erofs/
 obj-$(CONFIG_VBOXSF_FS)		+= vboxsf/
 obj-$(CONFIG_ZONEFS_FS)		+= zonefs/
 
-# obj-$(CONFIG_HYMOFS)		+= hymofs.o
+obj-$(CONFIG_HYMOFS)		+= hymofs.o
 
 
 # obj-$(CONFIG_NUKE_EXT4_SYSFS)		+= mountify/nuke_ext4_lkm/

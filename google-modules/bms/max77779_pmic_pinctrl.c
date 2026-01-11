@@ -218,7 +218,9 @@ static int max77779_pinconf_set(struct pinctrl_dev *pctldev,
 }
 
 static const struct pinconf_ops max77779_pinconf_ops = {
+#ifdef CONFIG_GENERIC_PINCONF
 	.is_generic = true,
+#endif
 	.pin_config_get = max77779_pinconf_get,
 	.pin_config_set = max77779_pinconf_set,
 };

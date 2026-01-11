@@ -1,3 +1,4 @@
+#define BBG_USE_DEFINE_LSM 1
 #include <linux/blkdev.h>
 #include <linux/security.h>
 #include <linux/lsm_hooks.h>

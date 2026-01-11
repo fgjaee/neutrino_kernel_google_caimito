@@ -12,6 +12,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
+#include <linux/delay.h>
 #if IS_ENABLED(CONFIG_REGULATOR_S2MPG14)
 #include <linux/mfd/samsung/s2mpg1415.h>
 #include <linux/mfd/samsung/s2mpg1415-register.h>

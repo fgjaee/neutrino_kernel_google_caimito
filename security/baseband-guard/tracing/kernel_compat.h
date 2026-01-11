@@ -1,3 +1,4 @@
+#define BBG_USE_DEFINE_LSM 1
 #include <linux/version.h>
 #include <linux/cred.h>
 #include "objsec.h"

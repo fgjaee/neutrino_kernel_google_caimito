@@ -2334,6 +2334,7 @@ bcm_mwbmap_audit(struct bcm_mwbmap * mwbmap_hdl)
 		}
 	}
 
+	(void)free_cnt; /* Silence unused-but-set-variable warning when !BCM_MWBMAP_DEBUG */
 	ASSERT((int)free_cnt == mwbmap_p->ifree);
 }
 

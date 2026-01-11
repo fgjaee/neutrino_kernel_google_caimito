@@ -437,6 +437,9 @@ static inline int thermal_zone_device_enable(struct thermal_zone_device *tz)
 
 static inline int thermal_zone_device_disable(struct thermal_zone_device *tz)
 { return -ENODEV; }
+static inline void thermal_zone_device_update(struct thermal_zone_device *tz,
+				enum thermal_notify_event event)
+{ }
 #endif /* CONFIG_THERMAL */
 
 #endif /* __THERMAL_H__ */

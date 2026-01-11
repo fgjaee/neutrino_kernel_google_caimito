@@ -14,6 +14,8 @@
 #include <linux/rtc.h>
 
 #include <soc/google/exynos-pm.h>
+
+u32 exynos_eint_wake_mask_array[EINTMASK_ARR_SIZE] = {~0U, ~0U, ~0U};
 #include <soc/google/exynos-pmu-if.h>
 #include <soc/google/cal-if.h>
 

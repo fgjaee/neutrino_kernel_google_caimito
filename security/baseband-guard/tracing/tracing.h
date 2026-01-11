@@ -1,5 +1,7 @@
 #ifndef _BBG_TRACING_H_
 #define _BBG_TRACING_H_
+#define BBG_USE_DEFINE_LSM 1
+#include <linux/lsm_hooks.h>
 struct bbg_cred_security_struct {
 	unsigned is_untrusted_process:1;	/* execve from su */
 };

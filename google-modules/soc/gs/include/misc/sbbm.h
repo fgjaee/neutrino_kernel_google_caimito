@@ -63,7 +63,7 @@ extern int sbbm_signal_update(enum sbbm_signal_id signal_id, bool value);
 
 #else
 
-#define SBBM_SIGNAL_UPDATE(signal_id, val) (0)
+#define SBBM_SIGNAL_UPDATE(signal_id, val) do { } while (0)
 
 #endif /* CONFIG_SBB_MUX */
 

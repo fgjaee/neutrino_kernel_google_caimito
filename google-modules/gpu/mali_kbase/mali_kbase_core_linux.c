@@ -3274,7 +3274,8 @@ int power_control_init(struct kbase_device *kbdev)
 #else
 	struct platform_device *pdev;
 	int err = 0;
-	unsigned int i, k;
+	unsigned int i;
+	int k = 0;
 #if defined(CONFIG_REGULATOR)
 	/* Regulator array must be terminated with a NULL pointer, because of how the
 	 * Linux kernel iterates through them.
@@ -3302,7 +3303,7 @@ int power_control_init(struct kbase_device *kbdev)
 	 * Any other error is ignored and the driver will continue
 	 * operating with a partial initialization of regulators.
 	 */
-	k = 0;
+
 	for (i = 0; i < BASE_MAX_NR_CLOCKS_REGULATORS; i++) {
 		const char *id = (i < ARRAY_SIZE(regulator_names)) ? regulator_names[i] : NULL;
 

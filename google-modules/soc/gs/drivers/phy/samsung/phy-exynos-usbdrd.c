@@ -40,6 +40,7 @@
 #endif
 
 #include "phy-exynos-usbdrd.h"
+#include "phy-exynos-usbdp-gen2-v4.h"
 //#include "phy-exynos-debug.h"
 
 //#include <soc/samsung/exynos-cpupm.h>

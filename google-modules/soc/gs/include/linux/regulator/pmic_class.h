@@ -15,6 +15,7 @@ struct device *pmic_subdevice_create(struct device *parent, const struct attribu
 void pmic_device_destroy(dev_t devt);
 #else
 #define pmic_device_create(a, b) (-1)
+#define pmic_subdevice_create(a, b, c, d) NULL
 #define pmic_device_destroy(a)                                            \
 	do {                                                              \
 	} while (0)

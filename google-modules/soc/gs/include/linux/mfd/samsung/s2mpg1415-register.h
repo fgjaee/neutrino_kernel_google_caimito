@@ -94,10 +94,13 @@ enum s2mpg1415_meter_muxsel {
  * @id: regulator id
  * @mode: regulator operation mode
  */
+#ifndef SEC_OPMODE_DATA_DEFINED
+#define SEC_OPMODE_DATA_DEFINED
 struct sec_opmode_data {
 	int id;
 	unsigned int mode;
 };
+#endif
 
 /**
  * struct sec_wtsr_smpl - settings for WTSR/SMPL

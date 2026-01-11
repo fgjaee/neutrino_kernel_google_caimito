@@ -25,7 +25,7 @@ M ?= $(shell pwd)
 
 KBUILD_OPTIONS += BCMDHD_ROOT=$(srctree)/$(src)
 -include $(KERNEL_SRC)/../private/google-modules/soc/gs/Makefile.include
-EXTRA_CFLAGS+="-Wno-missing-prototypes"
+EXTRA_CFLAGS+=-Wno-missing-prototypes -Wno-unused-but-set-variable -Wno-unused-const-variable
 
 
 # Define and "all" target, which isn't really needed but doesn't hurt.

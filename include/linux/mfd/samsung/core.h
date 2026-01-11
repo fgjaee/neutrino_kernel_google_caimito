@@ -122,10 +122,13 @@ struct sec_regulator_data {
  * @id: regulator id
  * @mode: regulator operation mode
  */
+#ifndef SEC_OPMODE_DATA_DEFINED
+#define SEC_OPMODE_DATA_DEFINED
 struct sec_opmode_data {
 	int id;
 	unsigned int mode;
 };
+#endif
 
 /*
  * samsung regulator operation mode

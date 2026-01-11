@@ -61,4 +61,4 @@ config VH_THERMAL
 	depends on VH_KERNEL
 	default n
 
-source "$(KCONFIG_SOC_GS_PREFIX)drivers/soc/google/vh/kernel/sched/Kconfig"
+source "google-modules/soc/gs/drivers/soc/google/vh/kernel/sched/Kconfig"

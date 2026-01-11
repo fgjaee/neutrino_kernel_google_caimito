@@ -18,6 +18,7 @@
 #include <linux/power_supply.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
+#include <linux/thermal.h>
 #include "bcl.h"
 #include "soc/google/debug-snapshot.h"
 #include <linux/regulator/pmic_class.h>

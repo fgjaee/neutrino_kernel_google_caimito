@@ -1,3 +1,7 @@
+ifndef KSU_KBUILD_GUARD
+KSU_KBUILD_GUARD := 1
+
+
 kernelsu-objs := ksu.o
 kernelsu-objs += allowlist.o
 kernelsu-objs += app_profile.o
@@ -17,7 +21,7 @@ kernelsu-objs += file_wrapper.o
 kernelsu-objs += util.o
 kernelsu-objs += extras.o
 
-kernelsu-objs += extras.o
+
 
 kernelsu-objs += selinux/selinux.o
 kernelsu-objs += selinux/sepolicy.o
@@ -29,7 +33,7 @@ ccflags-y += -I$(srctree)/security/baseband-guard/ -I$(srctree)/security/baseban
 
 obj-$(CONFIG_KSU) += kernelsu.o
 
-KDIR := $(KDIR)
+KDIR ?= $(srctree)
 MDIR := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
 # Hardcoded version to avoid git shell commands that break in-tree builds
@@ -62,3 +66,4 @@ ccflags-y += -Wno-strict-prototypes -Wno-int-conversion -Wno-gcc-compat -Wno-mis
 ccflags-y += -Wno-declaration-after-statement -Wno-unused-function -Wno-unused-variable
 
 # Keep a new line here!! Because someone may append config
+endif # KSU_KBUILD_GUARD

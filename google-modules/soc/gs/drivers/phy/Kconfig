@@ -3,4 +3,4 @@
 # PHY
 #
 
-source "$(KCONFIG_SOC_GS_PREFIX)drivers/phy/samsung/Kconfig"
+source "google-modules/soc/gs/drivers/phy/samsung/Kconfig"

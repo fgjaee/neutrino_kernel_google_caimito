@@ -323,6 +323,7 @@ unsigned int gs_tmu_throt_freq(int cpu)
 
 	return exynos_acme_ect_freq(cpu, get_therm_press(data));
 }
+EXPORT_SYMBOL_GPL(gs_tmu_throt_freq);
 
 static bool get_curr_state_from_acpm(void __iomem *base, int id, struct curr_state *curr_state)
 {

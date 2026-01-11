@@ -51,7 +51,7 @@ gcip-drivers := \
 	edgetpu/rio/drivers/edgetpu/rio.o \
 	gxp/zuma/gxp.o
 
-obj-y += $(gcip-drivers)
+obj-m += $(gcip-drivers)
 
 # gcip.o make rule, for the first gcip.o generation step needed to find all the
 # global symbols it has (via nm). This isn't the copy of gcip.o that will be

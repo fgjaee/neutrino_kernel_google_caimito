@@ -7,3 +7,22 @@ config GOOGLE_MODULES
 	select REGMAP_IRQ
 	select SND_SOC_COMPRESS
 	select VIDEOMODE_HELPERS
+
+source "google-modules/soc/gs/drivers/soc/google/Kconfig"
+source "google-modules/wlan/bcm4390/Kconfig"
+source "google-modules/nfc/Kconfig"
+source "google-modules/touch/goodix/Kconfig"
+source "google-modules/display/samsung/Kconfig"
+source "google-modules/display/common/Kconfig"
+source "google-modules/soc/gs/drivers/mfd/Kconfig"
+source "google-modules/soc/gs/drivers/regulator/Kconfig"
+source "google-modules/soc/gs/drivers/pci/controller/dwc/Kconfig"
+source "google-modules/soc/gs/drivers/thermal/Kconfig"
+source "google-modules/soc/gs/drivers/cpufreq/Kconfig"
+source "google-modules/soc/gs/drivers/usb/Kconfig"
+source "google-modules/trusty/drivers/trusty/Kconfig"
+source "google-modules/hdcp/samsung/Kconfig"
+source "google-modules/soc/gs/drivers/tty/serial/Kconfig"
+source "google-modules/bms/Kconfig"
+source "google-modules/bms/misc/Kconfig"
+source "google-modules/soc/gs/drivers/phy/Kconfig"

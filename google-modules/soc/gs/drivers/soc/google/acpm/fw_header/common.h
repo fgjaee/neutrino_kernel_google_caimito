@@ -103,11 +103,7 @@ struct acpm_ops {
 struct plugin_buffer {
 	u32 size;
 	u32 address;
-#ifndef CONFIG_GS_ACPM_MODULE
-	const struct plugin_buffer *next;
-#else
 	u32 next;
-#endif
 	char name[12];
 };
 
@@ -122,23 +118,12 @@ struct plugin_buffer {
  *			and info.build_version[47] == 0
  */
 struct plugin_ops {
-#ifndef CONFIG_GS_ACPM_MODULE
-	s32 (*ipc_handler)(struct ipc_cmd_info *cmd, u32 ch_num);
-	s32 (*irq_handler)(u32 intr);
-	s32 (*timer_event_handler)(void);
-	s32 (*extern_func)(u32 *arg0, u32 *arg1, u32 *arg2);
-#else
 	u32 ipc_handler;
 	u32 irq_handler;
 	u32 timer_event_handler;
 	u32 extern_func;
-#endif
 	struct build_info info;
-#ifndef CONFIG_GS_ACPM_MODULE
-	const struct plugin_buffer *buffers;
-#else
 	const u32 buffers;
-#endif
 };
 
 /**
@@ -165,26 +150,16 @@ struct timer_desc {
  */
 struct plugin {
 	u32 id;
-#ifndef CONFIG_GS_ACPM_MODULE
-	void *base_addr;
-	struct acpm_ops *acpm_ops;
-	struct plugin_ops *plugin_ops;
-#else
 	u32 base_addr;
 	u32 acpm_ops;
 	u32 plugin_ops;
-#endif
 	u32 secure_func_mask;
 	u32 extern_func_mask;
 	struct timer_desc timer;
 	u8 is_attached;
 	u32 size;
 	u8 stay_attached;
-#ifndef CONFIG_GS_ACPM_MODULE
-	const char *fw_name;
-#else
 	u32 fw_name;
-#endif
 };
 
 typedef void (*pfn_plugin_init)(struct plugin *p);

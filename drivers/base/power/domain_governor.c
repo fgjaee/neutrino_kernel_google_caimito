@@ -356,7 +356,7 @@ static bool cpu_power_down_ok(struct dev_pm_domain *pd)
 	struct device *cpu_dev;
 	s64 cpu_constraint, global_constraint;
 	s64 idle_duration_ns;
-	int cpu, i;
+	int cpu = 0, i;
 
 	/* Validate dev PM QoS constraints. */
 	if (!_default_power_down_ok(pd, now))

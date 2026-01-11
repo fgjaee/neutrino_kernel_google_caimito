@@ -109,6 +109,10 @@ ifeq ($(CONFIG_AS_HAS_ARMV8_5), y)
 asm-arch := armv8.5-a
 endif
 
+ifdef asm-arch
+KBUILD_AFLAGS += $(call as-option,-march=$(asm-arch))
+endif
+
 KBUILD_CFLAGS += $(call cc-option,-mcpu=cortex-a720)
 
 ifeq ($(CONFIG_SHADOW_CALL_STACK), y)

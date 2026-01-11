@@ -7,9 +7,7 @@
 #ifndef __FRAMEWORK_H_
 #define __FRAMEWORK_H_
 
-#ifdef CONFIG_GS_ACPM_MODULE
 #include "common.h"
-#endif
 
 /**
  * struct acpm_framework - General information for ACPM framework.
@@ -34,17 +32,9 @@
  * @intr_flag_offset:	Field offset for Mailbox interrupt pending register.
  */
 struct acpm_framework {
-#ifndef CONFIG_GS_ACPM_MODULE
-	struct plugin *plugins;
-#else
 	u32 plugins;
-#endif
 	u32 num_plugins;
-#ifndef CONFIG_GS_ACPM_MODULE
-	struct ipc_channel *ipc_channels;
-#else
 	u32 ipc_channels;
-#endif
 	u32 num_ipc_channels;
 	u32 pid_framework;
 	u32 pid_max;
@@ -297,7 +287,7 @@ struct speedyops {
 
 extern struct speedyops speedyops;
 
-#ifdef CONFIG_GS_ACPM_MODULE
+
 /**
  * acpm_get_buffer - Get an ACPM named buffer. This handle old ACPM cases.
  *
@@ -371,7 +361,6 @@ static inline int acpm_get_buffer(char *sram, const struct acpm_framework *acpm,
 	}
 	return -1;
 }
-#endif
 
 #define speedy_init()			speedyops.init()
 #ifdef CONFIG_MULTI_PMIC

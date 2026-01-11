@@ -15,6 +15,8 @@
 #if IS_ENABLED(CONFIG_SOC_ZUMA)
 #include <dt-bindings/soc/google/zumapro-bcl.h>
 #include <linux/mfd/samsung/rtc-s2mpg14.h>
+#include <linux/mfd/samsung/s2mpg14-register.h>
+#include <linux/mfd/samsung/s2mpg15-register.h>
 #elif IS_ENABLED(CONFIG_SOC_GS101)
 #include <linux/mfd/samsung/rtc-s2mpg10.h>
 #include <dt-bindings/soc/google/gs101-bcl.h>

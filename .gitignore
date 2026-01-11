@@ -176,3 +176,8 @@ all_kmi_symbols
 
 # Object directory
 out/
+/toolchain/
+/build_output.log
+/build_pid.txt
+/build_fail_log.txt
+/build_log.txt

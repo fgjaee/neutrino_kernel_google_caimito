@@ -4,7 +4,7 @@ KBASE_PATH_RELATIVE = $(M)
 
 include $(KERNEL_SRC)/../private/google-modules/soc/gs/Makefile.include
 
-KBUILD_OPTIONS  += CONFIG_EXYNOS_HDCP2=m
+KBUILD_OPTIONS  += CONFIG_EXYNOS_HDCP2=y
 
 EXTRA_SYMBOLS  += $(OUT_DIR)/../private/google-modules/trusty/Module.symvers
 
