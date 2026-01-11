@@ -45,14 +45,14 @@ else
 fi
 
 echo "🛠️  Configuring kernel with $DEFCONFIG..."
-make O=$O LLVM=1 LLVM_IAS=1 $DEFCONFIG
+make O=$O LLVM=1 LLVM_IAS=1 NM=llvm-nm $DEFCONFIG
 
 # Force config finalization to prevent loops
-make O=$O LLVM=1 LLVM_IAS=1 syncconfig
+make O=$O LLVM=1 LLVM_IAS=1 NM=llvm-nm syncconfig
 
 # 5. Build (modules disabled - testing if google-modules causes loop)
 echo "🚀 Building kernel (Image.lz4, dtbs only - modules skipped)..."
-make O=$O LLVM=1 LLVM_IAS=1 -j$(nproc) Image.lz4 dtbs
+make O=$O LLVM=1 LLVM_IAS=1 NM=llvm-nm -j$(nproc) Image.lz4 dtbs
 
 echo ""
 echo "✅ Build completed successfully!"
