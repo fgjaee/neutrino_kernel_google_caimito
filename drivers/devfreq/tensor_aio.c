@@ -524,9 +524,9 @@ zumapro_pmu_read(struct pmu_stat *stat)
 
 #ifdef CONFIG_ARM64_AMU_EXTN
 	asm volatile("mrs %0, cntpct_el0\n\t"
-		     "mrs %1, amevcntr01_el0\n\t"
-		     "mrs %2, amevcntr00_el0\n\t"
-		     "mrs %3, amevcntr03_el0\n\t"
+		     "mrs %1, S3_3_C13_C2_1\n\t"
+		     "mrs %2, S3_3_C13_C2_0\n\t"
+		     "mrs %3, S3_3_C13_C2_3\n\t"
 		     "isb"
 		     : "=r" (cntpct), "=r" (const_cyc), "=r" (cpu_cyc),
 		       "=r" (mem_cyc));
@@ -549,9 +549,9 @@ zuma_with_const_pmu_read(struct pmu_stat *stat)
 #ifdef CONFIG_ARM64_AMU_EXTN
 	asm volatile("isb\n\t"
 		     "mrs %0, cntpct_el0\n\t"
-		     "mrs %1, amevcntr01_el0\n\t"
-		     "mrs %2, amevcntr00_el0\n\t"
-		     "mrs %3, amevcntr03_el0\n\t"
+		     "mrs %1, S3_3_C13_C2_1\n\t"
+		     "mrs %2, S3_3_C13_C2_0\n\t"
+		     "mrs %3, S3_3_C13_C2_3\n\t"
 		     "isb"
 		     : "=r" (cntpct), "=r" (const_cyc), "=r" (cpu_cyc),
 		       "=r" (mem_cyc));
@@ -574,8 +574,8 @@ zuma_no_const_pmu_read(struct pmu_stat *stat)
 #ifdef CONFIG_ARM64_AMU_EXTN
 	asm volatile("isb\n\t"
 		     "mrs %0, cntpct_el0\n\t"
-		     "mrs %1, amevcntr00_el0\n\t"
-		     "mrs %2, amevcntr03_el0\n\t"
+		     "mrs %1, S3_3_C13_C2_0\n\t"
+		     "mrs %2, S3_3_C13_C2_3\n\t"
 		     "isb"
 		     : "=r" (cntpct), "=r" (cpu_cyc), "=r" (mem_cyc));
 #else
