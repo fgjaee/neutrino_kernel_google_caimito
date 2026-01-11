@@ -522,7 +522,7 @@ zumapro_pmu_read(struct pmu_stat *stat)
 {
 	register u64 cntpct, const_cyc, cpu_cyc, mem_cyc;
 
-	asm volatile("mrs %0, cntpctss_el0\n\t"
+	asm volatile("mrs %0, cntpct_el0\n\t"
 		     "mrs %1, amevcntr01_el0\n\t"
 		     "mrs %2, amevcntr00_el0\n\t"
 		     "mrs %3, amevcntr03_el0\n\t"
