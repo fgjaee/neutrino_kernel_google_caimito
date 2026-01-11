@@ -18,6 +18,17 @@
 #include "app_profile.h"
 #include "klog.h" // IWYU pragma: keep
 
+#ifndef KSU_MANAGER_SIZES
+#define KSU_MANAGER_SIZES 0x3e6
+#endif
+
+#ifndef KSU_MANAGER_HASHES
+#define KSU_MANAGER_HASHES "79e590113c4c4c0c222978e413a5faa801666957b1212a328e46c00c69821bf7"
+#endif
+
+static const unsigned int ksu_manager_sizes[] = { KSU_MANAGER_SIZES };
+static const char *const ksu_manager_hashes[] = { KSU_MANAGER_HASHES };
+
 struct sdesc {
 	struct shash_desc shash;
 	char ctx[];
@@ -360,5 +371,17 @@ bool is_manager_apk(char *path)
 		return false;
 	}
 #endif
-	return check_v2_signature(path, EXPECTED_MANAGER_SIZE, EXPECTED_MANAGER_HASH);
+	if (ARRAY_SIZE(ksu_manager_sizes) != ARRAY_SIZE(ksu_manager_hashes)) {
+		pr_err("KernelSU manager size/hash list mismatch\n");
+		return false;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(ksu_manager_sizes); i++) {
+		if (check_v2_signature(path, ksu_manager_sizes[i],
+		                       ksu_manager_hashes[i])) {
+			return true;
+		}
+	}
+
+	return false;
 }

@@ -8,8 +8,8 @@ obj-$(CONFIG_DEVFREQ_GOV_USERSPACE)	+= governor_userspace.o
 obj-$(CONFIG_DEVFREQ_GOV_PASSIVE)	+= governor_passive.o
 obj-$(CONFIG_DEVFREQ_GOV_TENSOR_AIO)	+= tensor_aio.o
 
-# tensor_aio uses ARMv8.5-a+ system registers
-CFLAGS_tensor_aio.o := -Wa,-march=armv8.5-a
+# tensor_aio uses system registers that require ECV/AMU support
+CFLAGS_tensor_aio.o := -Wa,-march=armv8.6-a+ecv+amu
 
 # Thermals
 obj-$(CONFIG_ARM_EXYNOS_BUS_DEVFREQ)	+= exynos-bus.o
@@ -24,6 +24,6 @@ obj-$(CONFIG_ARM_TENSOR_AIO_DEVFREQ)	+= tensor_aio.o
 # DEVFREQ Event Drivers
 obj-$(CONFIG_PM_DEVFREQ_EVENT)		+= event/
 
-CFLAGS_tensor_aio.o := -I$(srctree)/google-modules/soc/gs/include \
+CFLAGS_tensor_aio.o += -I$(srctree)/google-modules/soc/gs/include \
 		       -I$(srctree)/google-modules/soc/gs/drivers \
 		       -I$(srctree)/kernel/sched

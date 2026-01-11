@@ -1048,6 +1048,11 @@ static int conf_write_autoconf_cmd(const char *autoconf_name)
 	if (ret)
 		return -1;
 
+	if (is_same(name, tmp)) {
+		unlink(tmp);
+		return 0;
+	}
+
 	if (rename(tmp, name)) {
 		perror("rename");
 		return -1;
