@@ -106,7 +106,7 @@ config CHARGER_MAX77779_I2C
 	tristate "Maxim MAX77779 battery charger I2C driver"
 	depends on CHARGER_MAX77779 && I2C
 	select REGMAP_I2C
-	default CHARGER_MAX77779
+	default y
 	help
 	  Say Y to enable I2C support for the Maxim MAX77779 battery charger.
 
@@ -120,7 +120,7 @@ config FG_MAX77779_I2C
 	tristate "Maxim MAX77779 battery fuel gauge I2C driver"
 	depends on FG_MAX77779 && I2C
 	select REGMAP_I2C
-	default FG_MAX77779
+	default y
 	help
 	  Say Y to enable I2C support for the Maxim MAX77779 battery fuel gauge.
 
@@ -134,7 +134,7 @@ config VIMON_MAX77779_I2C
 	tristate "Maxim MAX77779 VIMON I2C driver"
 	depends on VIMON_MAX77779 && I2C
 	select REGMAP_I2C
-	default VIMON_MAX77779
+	default y
 	help
 	  Say Y to enable I2C support for the Maxim MAX77779 VIMON.
 
@@ -184,7 +184,7 @@ config MAX77779_I2CM_I2C
 	tristate "Maxim 77779 I2C Bridge I2C driver"
 	depends on MAX77779_I2CM && I2C
 	select REGMAP_I2C
-	default MAX77779_I2CM
+	default y
 	help
 	  Say Y to enable I2C support for the Maxim 77779 I2C Bridge Bus.
 
@@ -198,7 +198,7 @@ config MAX77779_PMIC_I2C
 	tristate "Maxim 77779 PMIC I2C driver"
 	depends on MAX77779_PMIC && I2C
 	select REGMAP_I2C
-	default MAX77779_PMIC
+	default y
 	help
 	  Say Y to enable I2C support for the Maxim 77779 PMIC.
 
@@ -230,7 +230,7 @@ config MAX77779_SP_I2C
 	tristate "Maxim 77779 Scratchpad I2C driver"
 	depends on MAX77779_SP && I2C
 	select REGMAP_I2C
-	default MAX77779_SP
+	default y
 	help
 	  Say Y to enable I2C support for the Maxim 77779 Scratchpad.
 
