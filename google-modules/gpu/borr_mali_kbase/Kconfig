@@ -82,7 +82,7 @@ config MALI_IS_FPGA
 	  This is the default HW backend.
 
 menu "Platform specific options"
-source "$(MALI_KCONFIG_EXT_PREFIX)drivers/gpu/arm/midgard/platform/Kconfig"
+source "google-modules/gpu/borr_mali_kbase/platform/Kconfig"
 endmenu
 
 config MALI_CSF_SUPPORT
@@ -377,6 +377,6 @@ config MALI_TRACE_POWER_GPU_WORK_PERIOD
 	  If unsure, say N.
 
 
-source "$(MALI_KCONFIG_EXT_PREFIX)drivers/gpu/arm/midgard/tests/Kconfig"
+source "google-modules/gpu/borr_mali_kbase/tests/Kconfig"
 
 endif
