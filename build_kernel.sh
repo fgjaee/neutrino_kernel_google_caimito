@@ -34,6 +34,7 @@ fi
 mkdir -p $O
 export KBUILD_BUILD_USER="Neutrino"
 export KBUILD_BUILD_HOST="GitHub-Runner"
+export NM=llvm-nm
 
 # 4. Clean and Configure (skip mrproper on fresh builds)
 if [ -f "$O/.config" ]; then
