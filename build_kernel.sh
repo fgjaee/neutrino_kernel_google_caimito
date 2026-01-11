@@ -48,7 +48,15 @@ echo "🛠️  Configuring kernel with $DEFCONFIG..."
 make O=$O LLVM=1 LLVM_IAS=1 NM=llvm-nm $DEFCONFIG
 
 # Force config finalization to prevent loops
+# Force config finalization to prevent loops
 make O=$O LLVM=1 LLVM_IAS=1 NM=llvm-nm syncconfig
+
+# 4.5 Merge Module Fragment (Crucial for Fixes)
+if [ -f "enable_modules.fragment" ]; then
+    echo "🔧 Merging enable_modules.fragment..."
+    cat enable_modules.fragment >> $O/.config
+    make O=$O LLVM=1 LLVM_IAS=1 NM=llvm-nm olddefconfig
+fi
 
 # 5. Build (modules disabled - testing if google-modules causes loop)
 echo "🚀 Building kernel (Image.lz4, dtbs only - modules skipped)..."

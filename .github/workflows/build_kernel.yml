@@ -27,7 +27,8 @@ jobs:
     - name: Prepare Directory Structure
       run: |
         # Create the google-modules folder that the Makefile is looking for
-        mkdir -p google-modules
+        # Create the google-modules folder that the Makefile is looking for
+        # mkdir -p google-modules # DISABLED: google-modules is in-tree
 
     - name: Install Dependencies
       run: |
