@@ -34,6 +34,7 @@ fi
 mkdir -p $O
 export KBUILD_BUILD_USER="Neutrino"
 export KBUILD_BUILD_HOST="GitHub-Runner"
+export NM=llvm-nm
 
 # 4. Clean and Configure (skip mrproper on fresh builds)
 if [ -f "$O/.config" ]; then
@@ -57,3 +58,8 @@ echo ""
 echo "✅ Build completed successfully!"
 echo "   Kernel Image: $O/arch/arm64/boot/Image.lz4"
 echo "   DTBs:         $O/arch/arm64/boot/dts/google/"
+
+if [ "${MAKE_ANYKERNEL3:-0}" -eq 1 ]; then
+    echo "📦 Packaging AnyKernel3 zip..."
+    ./scripts/make_anykernel3_zip.sh "$O"
+fi
