@@ -99,3 +99,5 @@ config QUEUE_DDIC_CMD_CALL_BACK
 	  when a command is queued on dsim driver.
 
 endif
+
+source "google-modules/display/samsung/panel/Kconfig"

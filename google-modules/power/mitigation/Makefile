@@ -28,7 +28,7 @@ ifneq ($(wildcard $(OUT_DIR)/../private/google-modules/radio/samsung/*/Module.sy
 EXTRA_SYMBOLS += $(OUT_DIR)/../private/google-modules/radio/samsung/*/Module.symvers
 endif
 
-KBUILD_OPTIONS += CONFIG_GOOGLE_BCL=m
+KBUILD_OPTIONS += CONFIG_GOOGLE_BCL=y
 include $(KERNEL_SRC)/../private/google-modules/soc/gs/Makefile.include
 
 modules modules_install clean compile_commands.json:
