@@ -17,7 +17,6 @@
 #include "allowlist.h"
 #include "feature.h"
 #include "klog.h" // IWYU pragma: keep
-#include "ksu.h"
 #include "ksud.h"
 #include "kernel_umount.h"
 #include "manager.h"
@@ -25,27 +24,29 @@
 #include "file_wrapper.h"
 #include "syscall_hook_manager.h"
 
-#include "tiny_sulog.c"
+#ifdef CONFIG_KSU_MANUAL_SU
+#include "manual_su.h"
+#endif
 
 // Permission check functions
 bool only_manager(void)
 {
-	return is_manager();
+    return is_manager();
 }
 
 bool only_root(void)
 {
-	return current_uid().val == 0;
+    return current_uid().val == 0;
 }
 
 bool manager_or_root(void)
 {
-	return current_uid().val == 0 || is_manager();
+    return current_uid().val == 0 || is_manager();
 }
 
 bool always_allow(void)
 {
-	return true; // No permission check
+    return true; // No permission check
 }
 
 bool allowed_for_su(void)
@@ -57,288 +58,279 @@ bool allowed_for_su(void)
 
 static int do_grant_root(void __user *arg)
 {
-	// we already check uid above on allowed_for_su()
-
+    // we already check uid above on allowed_for_su()
     write_sulog('i'); // log ioctl escalation
 
     pr_info("allow root for: %d\n", current_uid().val);
     escape_with_root_profile();
 
-	return 0;
+    return 0;
 }
-
-static uint32_t ksuver_override = 0;
 
 static int do_get_info(void __user *arg)
 {
     struct ksu_get_info_cmd cmd = { .version = KERNEL_SU_VERSION, .flags = 0 };
 
 #ifdef MODULE
-	cmd.flags |= 0x1;
+    cmd.flags |= 0x1;
 #endif
+    if (is_manager()) {
+        cmd.flags |= 0x2;
+    }
+    cmd.features = KSU_FEATURE_MAX;
 
-	if (ksuver_override)
-	    cmd.version = ksuver_override;
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("get_version: copy_to_user failed\n");
+        return -EFAULT;
+    }
 
-	if (is_manager()) {
-		cmd.flags |= 0x2;
-	}
-	cmd.features = KSU_FEATURE_MAX;
-
-	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
-		pr_err("get_version: copy_to_user failed\n");
-		return -EFAULT;
-	}
-
-	return 0;
+    return 0;
 }
 
 static int do_report_event(void __user *arg)
 {
-	struct ksu_report_event_cmd cmd;
+    struct ksu_report_event_cmd cmd;
 
-	if (copy_from_user(&cmd, arg, sizeof(cmd))) {
-		return -EFAULT;
-	}
+    if (copy_from_user(&cmd, arg, sizeof(cmd))) {
+        return -EFAULT;
+    }
 
-	switch (cmd.event) {
-	case EVENT_POST_FS_DATA: {
-		static bool post_fs_data_lock = false;
-		if (!post_fs_data_lock) {
-			post_fs_data_lock = true;
-			pr_info("post-fs-data triggered\n");
-			on_post_fs_data();
-		}
-		break;
-	}
-	case EVENT_BOOT_COMPLETED: {
-		static bool boot_complete_lock = false;
-		if (!boot_complete_lock) {
-			boot_complete_lock = true;
-			pr_info("boot_complete triggered\n");
-			on_boot_completed();
-		}
-		break;
-	}
-	case EVENT_MODULE_MOUNTED: {
-		pr_info("module mounted!\n");
-		on_module_mounted();
-		break;
-	}
-	default:
-		break;
-	}
+    switch (cmd.event) {
+    case EVENT_POST_FS_DATA: {
+        static bool post_fs_data_lock = false;
+        if (!post_fs_data_lock) {
+            post_fs_data_lock = true;
+            pr_info("post-fs-data triggered\n");
+            on_post_fs_data();
+        }
+        break;
+    }
+    case EVENT_BOOT_COMPLETED: {
+        static bool boot_complete_lock = false;
+        if (!boot_complete_lock) {
+            boot_complete_lock = true;
+            pr_info("boot_complete triggered\n");
+            on_boot_completed();
+        }
+        break;
+    }
+    case EVENT_MODULE_MOUNTED: {
+        pr_info("module mounted!\n");
+        on_module_mounted();
+        break;
+    }
+    default:
+        break;
+    }
 
-	return 0;
+    return 0;
 }
 
 static int do_set_sepolicy(void __user *arg)
 {
-	struct ksu_set_sepolicy_cmd cmd;
+    struct ksu_set_sepolicy_cmd cmd;
 
-	if (copy_from_user(&cmd, arg, sizeof(cmd))) {
-		return -EFAULT;
-	}
+    if (copy_from_user(&cmd, arg, sizeof(cmd))) {
+        return -EFAULT;
+    }
 
-	return handle_sepolicy(cmd.cmd, (void __user *)cmd.arg);
+    return handle_sepolicy(cmd.cmd, (void __user *)cmd.arg);
 }
 
 static int do_check_safemode(void __user *arg)
 {
-	struct ksu_check_safemode_cmd cmd;
+    struct ksu_check_safemode_cmd cmd;
 
-	cmd.in_safe_mode = ksu_is_safe_mode();
+    cmd.in_safe_mode = ksu_is_safe_mode();
 
-	if (cmd.in_safe_mode) {
-		pr_warn("safemode enabled!\n");
-	}
+    if (cmd.in_safe_mode) {
+        pr_warn("safemode enabled!\n");
+    }
 
-	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
-		pr_err("check_safemode: copy_to_user failed\n");
-		return -EFAULT;
-	}
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("check_safemode: copy_to_user failed\n");
+        return -EFAULT;
+    }
 
-	return 0;
+    return 0;
 }
 
 static int do_get_allow_list(void __user *arg)
 {
-	struct ksu_get_allow_list_cmd cmd;
+    struct ksu_get_allow_list_cmd cmd;
 
-	if (copy_from_user(&cmd, arg, sizeof(cmd))) {
-		return -EFAULT;
-	}
+    if (copy_from_user(&cmd, arg, sizeof(cmd))) {
+        return -EFAULT;
+    }
 
-	bool success = ksu_get_allow_list((int *)cmd.uids, (int *)&cmd.count, true);
+    bool success = ksu_get_allow_list((int *)cmd.uids, (int *)&cmd.count, true);
 
-	if (!success) {
-		return -EFAULT;
-	}
+    if (!success) {
+        return -EFAULT;
+    }
 
-	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
-		pr_err("get_allow_list: copy_to_user failed\n");
-		return -EFAULT;
-	}
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("get_allow_list: copy_to_user failed\n");
+        return -EFAULT;
+    }
 
-	return 0;
+    return 0;
 }
 
 static int do_get_deny_list(void __user *arg)
 {
-	struct ksu_get_allow_list_cmd cmd;
+    struct ksu_get_allow_list_cmd cmd;
 
-	if (copy_from_user(&cmd, arg, sizeof(cmd))) {
-		return -EFAULT;
-	}
+    if (copy_from_user(&cmd, arg, sizeof(cmd))) {
+        return -EFAULT;
+    }
 
     bool success =
         ksu_get_allow_list((int *)cmd.uids, (int *)&cmd.count, false);
 
-	if (!success) {
-		return -EFAULT;
-	}
+    if (!success) {
+        return -EFAULT;
+    }
 
-	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
-		pr_err("get_deny_list: copy_to_user failed\n");
-		return -EFAULT;
-	}
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("get_deny_list: copy_to_user failed\n");
+        return -EFAULT;
+    }
 
-	return 0;
+    return 0;
 }
 
 static int do_uid_granted_root(void __user *arg)
 {
-	struct ksu_uid_granted_root_cmd cmd;
+    struct ksu_uid_granted_root_cmd cmd;
 
-	if (copy_from_user(&cmd, arg, sizeof(cmd))) {
-		return -EFAULT;
-	}
+    if (copy_from_user(&cmd, arg, sizeof(cmd))) {
+        return -EFAULT;
+    }
 
-	cmd.granted = ksu_is_allow_uid_for_current(cmd.uid);
+    cmd.granted = ksu_is_allow_uid_for_current(cmd.uid);
 
-	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
-		pr_err("uid_granted_root: copy_to_user failed\n");
-		return -EFAULT;
-	}
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("uid_granted_root: copy_to_user failed\n");
+        return -EFAULT;
+    }
 
-	return 0;
+    return 0;
 }
 
 static int do_uid_should_umount(void __user *arg)
 {
-	struct ksu_uid_should_umount_cmd cmd;
+    struct ksu_uid_should_umount_cmd cmd;
 
-	if (copy_from_user(&cmd, arg, sizeof(cmd))) {
-		return -EFAULT;
-	}
+    if (copy_from_user(&cmd, arg, sizeof(cmd))) {
+        return -EFAULT;
+    }
 
-	cmd.should_umount = ksu_uid_should_umount(cmd.uid);
+    cmd.should_umount = ksu_uid_should_umount(cmd.uid);
 
-	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
-		pr_err("uid_should_umount: copy_to_user failed\n");
-		return -EFAULT;
-	}
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("uid_should_umount: copy_to_user failed\n");
+        return -EFAULT;
+    }
 
-	return 0;
+    return 0;
 }
 
 static int do_get_manager_appid(void __user *arg)
 {
-	struct ksu_get_manager_appid_cmd cmd;
+    struct ksu_get_manager_appid_cmd cmd;
 
-	cmd.appid = ksu_get_manager_appid();
+    cmd.appid = ksu_get_manager_appid();
 
-	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
-		pr_err("get_manager_appid: copy_to_user failed\n");
-		return -EFAULT;
-	}
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("get_manager_appid: copy_to_user failed\n");
+        return -EFAULT;
+    }
 
-	return 0;
+    return 0;
 }
 
 static int do_get_app_profile(void __user *arg)
 {
-	struct ksu_get_app_profile_cmd cmd;
+    struct ksu_get_app_profile_cmd cmd;
 
-	if (copy_from_user(&cmd, arg, sizeof(cmd))) {
-		pr_err("get_app_profile: copy_from_user failed\n");
-		return -EFAULT;
-	}
+    if (copy_from_user(&cmd, arg, sizeof(cmd))) {
+        pr_err("get_app_profile: copy_from_user failed\n");
+        return -EFAULT;
+    }
 
-	if (!ksu_get_app_profile(&cmd.profile)) {
-		return -ENOENT;
-	}
+    if (!ksu_get_app_profile(&cmd.profile)) {
+        return -ENOENT;
+    }
 
-	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
-		pr_err("get_app_profile: copy_to_user failed\n");
-		return -EFAULT;
-	}
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("get_app_profile: copy_to_user failed\n");
+        return -EFAULT;
+    }
 
-	return 0;
+    return 0;
 }
 
 static int do_set_app_profile(void __user *arg)
 {
-	struct ksu_set_app_profile_cmd cmd;
+    struct ksu_set_app_profile_cmd cmd;
 
-	if (copy_from_user(&cmd, arg, sizeof(cmd))) {
-		pr_err("set_app_profile: copy_from_user failed\n");
-		return -EFAULT;
-	}
+    if (copy_from_user(&cmd, arg, sizeof(cmd))) {
+        pr_err("set_app_profile: copy_from_user failed\n");
+        return -EFAULT;
+    }
 
-	if (!ksu_set_app_profile(&cmd.profile, true)) {
-		return -EFAULT;
-	}
+    if (!ksu_set_app_profile(&cmd.profile, true)) {
+        return -EFAULT;
+    }
 
-	return 0;
+    return 0;
 }
 
 static int do_get_feature(void __user *arg)
 {
-	struct ksu_get_feature_cmd cmd;
-	bool supported;
-	int ret;
+    struct ksu_get_feature_cmd cmd;
+    bool supported;
+    int ret;
 
-	if (copy_from_user(&cmd, arg, sizeof(cmd))) {
-		pr_err("get_feature: copy_from_user failed\n");
-		return -EFAULT;
-	}
+    if (copy_from_user(&cmd, arg, sizeof(cmd))) {
+        pr_err("get_feature: copy_from_user failed\n");
+        return -EFAULT;
+    }
 
+    ret = ksu_get_feature(cmd.feature_id, &cmd.value, &supported);
+    cmd.supported = supported ? 1 : 0;
 
-	ret = ksu_get_feature(cmd.feature_id, &cmd.value, &supported);
-	cmd.supported = supported ? 1 : 0;
+    if (ret && supported) {
+        pr_err("get_feature: failed for feature %u: %d\n", cmd.feature_id, ret);
+        return ret;
+    }
 
-	if (ret && supported) {
-		pr_err("get_feature: failed for feature %u: %d\n", cmd.feature_id, ret);
-		return ret;
-	}
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("get_feature: copy_to_user failed\n");
+        return -EFAULT;
+    }
 
-	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
-		pr_err("get_feature: copy_to_user failed\n");
-		return -EFAULT;
-	}
-
-	return 0;
+    return 0;
 }
 
 static int do_set_feature(void __user *arg)
 {
-	struct ksu_set_feature_cmd cmd;
-	int ret;
+    struct ksu_set_feature_cmd cmd;
+    int ret;
 
-	if (copy_from_user(&cmd, arg, sizeof(cmd))) {
-		pr_err("set_feature: copy_from_user failed\n");
-		return -EFAULT;
-	}
+    if (copy_from_user(&cmd, arg, sizeof(cmd))) {
+        pr_err("set_feature: copy_from_user failed\n");
+        return -EFAULT;
+    }
 
+    ret = ksu_set_feature(cmd.feature_id, cmd.value);
+    if (ret) {
+        pr_err("set_feature: failed for feature %u: %d\n", cmd.feature_id, ret);
+        return ret;
+    }
 
-	ret = ksu_set_feature(cmd.feature_id, cmd.value);
-	if (ret) {
-		pr_err("set_feature: failed for feature %u: %d\n", cmd.feature_id, ret);
-		return ret;
-	}
-
-	return 0;
+    return 0;
 }
 
 static int do_get_wrapper_fd(void __user *arg)
@@ -358,95 +350,67 @@ static int do_get_wrapper_fd(void __user *arg)
 
 static int do_manage_mark(void __user *arg)
 {
-	struct ksu_manage_mark_cmd cmd;
-	int ret = 0;
+    struct ksu_manage_mark_cmd cmd;
+    int ret = 0;
 
-	if (copy_from_user(&cmd, arg, sizeof(cmd))) {
-		pr_err("manage_mark: copy_from_user failed\n");
-		return -EFAULT;
-	}
+    if (copy_from_user(&cmd, arg, sizeof(cmd))) {
+        pr_err("manage_mark: copy_from_user failed\n");
+        return -EFAULT;
+    }
 
-	switch (cmd.operation) {
-	case KSU_MARK_GET: {
-		// Get task mark status
-		ret = ksu_get_task_mark(cmd.pid);
-		if (ret < 0) {
-			pr_err("manage_mark: get failed for pid %d: %d\n", cmd.pid, ret);
-			return ret;
-		}
-		cmd.result = (u32)ret;
-		break;
-	}
-	case KSU_MARK_MARK: {
-		if (cmd.pid == 0) {
-			ksu_mark_all_process();
-		} else {
-			ret = ksu_set_task_mark(cmd.pid, true);
-			if (ret < 0) {
-				pr_err("manage_mark: set_mark failed for pid %d: %d\n", cmd.pid,
-					ret);
-				return ret;
-			}
-		}
-		break;
-	}
-	case KSU_MARK_UNMARK: {
-		if (cmd.pid == 0) {
-			ksu_unmark_all_process();
-		} else {
-			ret = ksu_set_task_mark(cmd.pid, false);
-			if (ret < 0) {
-				pr_err("manage_mark: set_unmark failed for pid %d: %d\n",
-					cmd.pid, ret);
-				return ret;
-			}
-		}
-		break;
-	}
-	case KSU_MARK_REFRESH: {
-		ksu_mark_running_process();
-		pr_info("manage_mark: refreshed running processes\n");
-		break;
-	}
-	default: {
-		pr_err("manage_mark: invalid operation %u\n", cmd.operation);
-		return -EINVAL;
-	}
-	}
-	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
-		pr_err("manage_mark: copy_to_user failed\n");
-		return -EFAULT;
-	}
+    switch (cmd.operation) {
+    case KSU_MARK_GET: {
+        // Get task mark status
+        ret = ksu_get_task_mark(cmd.pid);
+        if (ret < 0) {
+            pr_err("manage_mark: get failed for pid %d: %d\n", cmd.pid, ret);
+            return ret;
+        }
+        cmd.result = (u32)ret;
+        break;
+    }
+    case KSU_MARK_MARK: {
+        if (cmd.pid == 0) {
+            ksu_mark_all_process();
+        } else {
+            ret = ksu_set_task_mark(cmd.pid, true);
+            if (ret < 0) {
+                pr_err("manage_mark: set_mark failed for pid %d: %d\n", cmd.pid,
+                       ret);
+                return ret;
+            }
+        }
+        break;
+    }
+    case KSU_MARK_UNMARK: {
+        if (cmd.pid == 0) {
+            ksu_unmark_all_process();
+        } else {
+            ret = ksu_set_task_mark(cmd.pid, false);
+            if (ret < 0) {
+                pr_err("manage_mark: set_unmark failed for pid %d: %d\n",
+                       cmd.pid, ret);
+                return ret;
+            }
+        }
+        break;
+    }
+    case KSU_MARK_REFRESH: {
+        ksu_mark_running_process();
+        pr_info("manage_mark: refreshed running processes\n");
+        break;
+    }
+    default: {
+        pr_err("manage_mark: invalid operation %u\n", cmd.operation);
+        return -EINVAL;
+    }
+    }
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("manage_mark: copy_to_user failed\n");
+        return -EFAULT;
+    }
 
-	return 0;
-}
-
-static int do_get_hook_mode(void __user *arg)
-{
-	struct ksu_get_hook_mode_cmd cmd = {0};
-
-	strscpy(cmd.mode, "Kprobes", sizeof(cmd.mode));
-
-	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
-		pr_err("get_hook_mode: copy_to_user failed\n");
-		return -EFAULT;
-	}
-
-	return 0;
-}
-
-static int do_get_version_tag(void __user *arg)
-{
-	struct ksu_get_version_tag_cmd cmd = {0};
-
-	strscpy(cmd.tag, KERNEL_SU_VERSION_TAG, sizeof(cmd.tag));
-
-	if (copy_to_user(arg, &cmd, sizeof(cmd))) {
-		pr_err("get_version_tag: copy_to_user failed\n");
-		return -EFAULT;
-	}
-
-	return 0;
+    return 0;
 }
 
 static int do_nuke_ext4_sysfs(void __user *arg)
@@ -577,59 +541,6 @@ static int add_try_umount(void __user *arg)
         return 0;
     }
 
-    // this way userspace can deduce the memory it has to prepare.
-    case KSU_UMOUNT_GETSIZE: {
-        // check for pointer first
-        if (!cmd.arg)
-            return -EFAULT;
-        
-        size_t total_size = 0; // size of list in bytes
-
-        down_read(&mount_list_lock);
-        list_for_each_entry(entry, &mount_list, list) {
-            total_size = total_size + strlen(entry->umountable) + 1; // + 1 for \0
-        }
-        up_read(&mount_list_lock);
-
-        // debug
-        // pr_info("cmd_add_try_umount: total_size: %zu\n", total_size);
-            
-        if (copy_to_user((size_t __user *)cmd.arg, &total_size, sizeof(total_size)))
-            return -EFAULT;
-
-        return 0;
-    }
-        
-    // WARNING! this is straight up pointerwalking.
-    // this way we dont need to redefine the ioctl defs.
-    // this also avoids us needing to kmalloc
-    // userspace have to send pointer to memory (malloc/alloca) or pointer to a VLA.
-    case KSU_UMOUNT_GETLIST: {
-        // check for pointer first
-        if (!cmd.arg)
-            return -EFAULT;
-            
-        char *user_buf = (char *)cmd.arg;
-
-        down_read(&mount_list_lock);
-        list_for_each_entry(entry, &mount_list, list) {
-
-            //debug
-            //pr_info("cmd_add_try_umount: entry: %s\n", entry->umountable);
-            
-            if (copy_to_user((char __user *)user_buf, entry->umountable, strlen(entry->umountable) + 1 )) {
-                up_read(&mount_list_lock);
-                return -EFAULT;
-            }
-
-            // walk it! +1 for null terminator
-            user_buf = user_buf + strlen(entry->umountable) + 1;
-        }
-        up_read(&mount_list_lock);
-
-        return 0;
-    }
-
     default: {
         pr_err("cmd_add_try_umount: invalid operation %u\n", cmd.mode);
         return -EINVAL;
@@ -639,6 +550,170 @@ static int add_try_umount(void __user *arg)
 
     return 0;
 }
+
+static int list_try_umount(void __user *arg)
+{
+    struct ksu_list_try_umount_cmd cmd;
+    struct mount_entry *entry;
+    char *output_buf;
+    size_t output_size;
+    size_t offset = 0;
+    int ret = 0;
+
+    if (copy_from_user(&cmd, arg, sizeof(cmd)))
+        return -EFAULT;
+
+    output_size = cmd.buf_size ? cmd.buf_size : 4096;
+
+    if (!cmd.arg || output_size == 0)
+        return -EINVAL;
+
+    output_buf = kzalloc(output_size, GFP_KERNEL);
+    if (!output_buf)
+        return -ENOMEM;
+
+    offset += snprintf(output_buf + offset, output_size - offset,
+                       "Mount Point\tFlags\n");
+    offset += snprintf(output_buf + offset, output_size - offset,
+                       "----------\t-----\n");
+
+    down_read(&mount_list_lock);
+    list_for_each_entry (entry, &mount_list, list) {
+        int written = snprintf(output_buf + offset, output_size - offset,
+                               "%s\t%u\n", entry->umountable, entry->flags);
+        if (written < 0) {
+            ret = -EFAULT;
+            break;
+        }
+        if (written >= (int)(output_size - offset)) {
+            ret = -ENOSPC;
+            break;
+        }
+        offset += written;
+    }
+    up_read(&mount_list_lock);
+
+    if (ret == 0) {
+        if (copy_to_user((void __user *)cmd.arg, output_buf, offset))
+            ret = -EFAULT;
+    }
+
+    kfree(output_buf);
+    return ret;
+}
+
+static int do_get_sulog_dump(void __user *arg)
+{
+    int ret;
+
+    if (current_uid().val != 0)
+		return -EFAULT;
+
+    ret = send_sulog_dump(arg);
+    if (ret)
+        return -EFAULT;
+
+    return 0;
+}
+
+// 100. GET_FULL_VERSION - Get full version string
+static int do_get_full_version(void __user *arg)
+{
+    struct ksu_get_full_version_cmd cmd = { 0 };
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
+    strscpy(cmd.version_full, KSU_VERSION_FULL, sizeof(cmd.version_full));
+#else
+    strlcpy(cmd.version_full, KSU_VERSION_FULL, sizeof(cmd.version_full));
+#endif
+
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("get_full_version: copy_to_user failed\n");
+        return -EFAULT;
+    }
+
+    return 0;
+}
+
+// 101. HOOK_TYPE - Get hook type
+static int do_get_hook_type(void __user *arg)
+{
+    struct ksu_hook_type_cmd cmd = { 0 };
+    const char *type = "Tracepoint";
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
+    strscpy(cmd.hook_type, type, sizeof(cmd.hook_type));
+#else
+    strlcpy(cmd.hook_type, type, sizeof(cmd.hook_type));
+#endif
+
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("get_hook_type: copy_to_user failed\n");
+        return -EFAULT;
+    }
+
+    return 0;
+}
+
+// 102. ENABLE_KPM - Check if KPM is enabled
+static int do_enable_kpm(void __user *arg)
+{
+    struct ksu_enable_kpm_cmd cmd;
+
+    cmd.enabled = IS_ENABLED(CONFIG_KPM);
+
+    if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+        pr_err("enable_kpm: copy_to_user failed\n");
+        return -EFAULT;
+    }
+
+    return 0;
+}
+
+#ifdef CONFIG_KSU_MANUAL_SU
+static bool system_uid_check(void)
+{
+    return current_uid().val <= 2000;
+}
+
+static int do_manual_su(void __user *arg)
+{
+    struct ksu_manual_su_cmd cmd;
+    struct manual_su_request request;
+    int res;
+
+    if (copy_from_user(&cmd, arg, sizeof(cmd))) {
+        pr_err("manual_su: copy_from_user failed\n");
+        return -EFAULT;
+    }
+
+    pr_info("manual_su request, option=%d, uid=%d, pid=%d\n", cmd.option,
+            cmd.target_uid, cmd.target_pid);
+
+    memset(&request, 0, sizeof(request));
+    request.target_uid = cmd.target_uid;
+    request.target_pid = cmd.target_pid;
+
+    if (cmd.option == MANUAL_SU_OP_GENERATE_TOKEN ||
+        cmd.option == MANUAL_SU_OP_ESCALATE) {
+        memcpy(request.token_buffer, cmd.token_buffer,
+               sizeof(request.token_buffer));
+    }
+
+    res = ksu_handle_manual_su_request(cmd.option, &request);
+
+    if (cmd.option == MANUAL_SU_OP_GENERATE_TOKEN && res == 0) {
+        memcpy(cmd.token_buffer, request.token_buffer,
+               sizeof(cmd.token_buffer));
+        if (copy_to_user(arg, &cmd, sizeof(cmd))) {
+            pr_err("manual_su: copy_to_user failed\n");
+            return -EFAULT;
+        }
+    }
+
+    return res;
+}
+#endif
 
 // IOCTL handlers mapping table
 static const struct ksu_ioctl_cmd_map ksu_ioctl_handlers[] = {
@@ -714,20 +789,44 @@ static const struct ksu_ioctl_cmd_map ksu_ioctl_handlers[] = {
       .name = "ADD_TRY_UMOUNT",
       .handler = add_try_umount,
       .perm_check = manager_or_root },
-	{ .cmd = KSU_IOCTL_GET_HOOK_MODE,
-	  .name = "GET_HOOK_MODE",
-	  .handler = do_get_hook_mode,
-	  .perm_check = manager_or_root },
-	{ .cmd = KSU_IOCTL_GET_VERSION_TAG,
-	  .name = "GET_VERSION_TAG",
-	  .handler = do_get_version_tag,
-	  .perm_check = manager_or_root },
+    { .cmd = KSU_IOCTL_GET_FULL_VERSION,
+      .name = "GET_FULL_VERSION",
+      .handler = do_get_full_version,
+      .perm_check = always_allow },
+    { .cmd = KSU_IOCTL_HOOK_TYPE,
+      .name = "GET_HOOK_TYPE",
+      .handler = do_get_hook_type,
+      .perm_check = manager_or_root },
+    { .cmd = KSU_IOCTL_ENABLE_KPM,
+      .name = "GET_ENABLE_KPM",
+      .handler = do_enable_kpm,
+      .perm_check = manager_or_root },
+#ifdef CONFIG_KSU_MANUAL_SU
+    { .cmd = KSU_IOCTL_MANUAL_SU,
+      .name = "MANUAL_SU",
+      .handler = do_manual_su,
+      .perm_check = system_uid_check },
+#endif
+#ifdef CONFIG_KPM
+    { .cmd = KSU_IOCTL_KPM,
+      .name = "KPM_OPERATION",
+      .handler = do_kpm,
+      .perm_check = manager_or_root },
+#endif
+    { .cmd = KSU_IOCTL_LIST_TRY_UMOUNT,
+      .name = "LIST_TRY_UMOUNT",
+      .handler = list_try_umount,
+      .perm_check = manager_or_root },
+    { .cmd = KSU_IOCTL_GET_SULOG_DUMP,
+      .name = "GET_SULOG_DUMP",
+      .handler = do_get_sulog_dump,
+      .perm_check = only_root },
     { .cmd = 0, .name = NULL, .handler = NULL, .perm_check = NULL } // Sentinel
 };
 
 struct ksu_install_fd_tw {
-	struct callback_head cb;
-	int __user *outp;
+    struct callback_head cb;
+    int __user *outp;
 };
 
 static void ksu_install_fd_tw_func(struct callback_head *cb)
@@ -737,109 +836,89 @@ static void ksu_install_fd_tw_func(struct callback_head *cb)
     int fd = ksu_install_fd();
     pr_info("[%d] install ksu fd: %d\n", current->pid, fd);
 
-	if (copy_to_user(tw->outp, &fd, sizeof(fd))) {
-		pr_err("install ksu fd reply err\n");
+    if (copy_to_user(tw->outp, &fd, sizeof(fd))) {
+        pr_err("install ksu fd reply err\n");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
-		close_fd(fd);
+        close_fd(fd);
 #else
-		ksys_close(fd);
+        ksys_close(fd);
 #endif
-	}
-
-	kfree(tw);
-}
-
-static int reboot_handler_pre(struct kprobe *p, struct pt_regs *regs)
-{
-	struct pt_regs *real_regs = PT_REAL_REGS(regs);
-	int magic1 = (int)PT_REGS_PARM1(real_regs);
-	int magic2 = (int)PT_REGS_PARM2(real_regs);
-	unsigned int cmd = (unsigned int)PT_REGS_PARM3(real_regs);
-	unsigned long arg4 = (unsigned long)PT_REGS_SYSCALL_PARM4(real_regs);
-	unsigned long reply = (unsigned long)arg4;
-
-	/* Check if this is a request to install KSU fd */
-	if (magic1 == KSU_INSTALL_MAGIC1 && magic2 == KSU_INSTALL_MAGIC2) {
-		struct ksu_install_fd_tw *tw;
-
-		tw = kzalloc(sizeof(*tw), GFP_ATOMIC);
-		if (!tw)
-			return 0;
-
-		tw->outp = (int __user *)arg4;
-		tw->cb.func = ksu_install_fd_tw_func;
-
-		if (task_work_add(current, &tw->cb, TWA_RESUME)) {
-			kfree(tw);
-			pr_warn("install fd add task_work failed\n");
-		}
-	}
-
-	if (magic2 == CHANGE_MANAGER_UID) {
-		/* only root is allowed for this command */
-		if (current_uid().val != 0)
-			return 0;
-
-		pr_info("sys_reboot: ksu_set_manager_appid to: %d\n", cmd);
-		ksu_set_manager_appid(cmd);
-
-		if (cmd == ksu_get_manager_appid()) {
-			if (copy_to_user((void __user *)arg4, &reply, sizeof(reply)))
-				pr_info("sys_reboot: reply fail\n");
-		}
-
-		return 0;
-	}
-
-	if (magic2 == GET_SULOG_DUMP_V2) {
-		if (current_uid().val != 0)
-			return 0;
-
-		int ret = send_sulog_dump((void __user *)arg4);
-            if (ret)
-                return 0;
-
-        if (copy_to_user((void __user *)arg4, &reply, sizeof(reply) ))
-            return 0;
-	}
-
-    if (magic2 == CHANGE_KSUVER) {
-        if (current_uid().val != 0)
-            return 0;
-
-        pr_info("sys_reboot: ksu_change_ksuver to: %d\n", cmd);
-        ksuver_override = cmd;
-
-        if (copy_to_user((void __user *)arg4, &reply, sizeof(reply) ))
-            return 0;
     }
 
-	return 0;
+    kfree(tw);
+}
+
+// downstream: make sure to pass arg as reference, this can allow us to extend things.
+int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd,
+                          void __user **arg)
+{
+    struct ksu_install_fd_tw *tw;
+
+    if (magic1 != KSU_INSTALL_MAGIC1)
+        return 0;
+
+#ifdef CONFIG_KSU_DEBUG
+    pr_info("sys_reboot: intercepted call! magic: 0x%x id: %d\n", magic1,
+            magic2);
+#endif
+
+    // Check if this is a request to install KSU fd
+    if (magic2 == KSU_INSTALL_MAGIC2) {
+        tw = kzalloc(sizeof(*tw), GFP_ATOMIC);
+        if (!tw)
+            return 0;
+
+        tw->outp = (int __user *)*arg;
+        tw->cb.func = ksu_install_fd_tw_func;
+
+        if (task_work_add(current, &tw->cb, TWA_RESUME)) {
+            kfree(tw);
+            pr_warn("install fd add task_work failed\n");
+        }
+
+        return 0;
+    }
+
+    // extensions
+
+    return 0;
+}
+
+// Reboot hook for installing fd
+static int reboot_handler_pre(struct kprobe *p, struct pt_regs *regs)
+{
+    struct pt_regs *real_regs = PT_REAL_REGS(regs);
+    int magic1 = (int)PT_REGS_PARM1(real_regs);
+    int magic2 = (int)PT_REGS_PARM2(real_regs);
+    int cmd = (int)PT_REGS_PARM3(real_regs);
+    void __user **arg = (void __user **)&PT_REGS_SYSCALL_PARM4(real_regs);
+
+    return ksu_handle_sys_reboot(magic1, magic2, cmd, arg);
 }
 
 static struct kprobe reboot_kp = {
-	.symbol_name = REBOOT_SYMBOL,
-	.pre_handler = reboot_handler_pre,
+    .symbol_name = REBOOT_SYMBOL,
+    .pre_handler = reboot_handler_pre,
 };
 
 void ksu_supercalls_init(void)
 {
-	int i;
+    int i;
 
     pr_info("KernelSU IOCTL Commands:\n");
     for (i = 0; ksu_ioctl_handlers[i].handler; i++) {
         pr_info("  %-18s = 0x%08x\n", ksu_ioctl_handlers[i].name,
                 ksu_ioctl_handlers[i].cmd);
     }
+    int rc = register_kprobe(&reboot_kp);
+    if (rc) {
+        pr_err("reboot kprobe failed: %d\n", rc);
+    } else {
+        pr_info("reboot kprobe registered successfully\n");
+    }
 
-	int rc = register_kprobe(&reboot_kp);
-	if (rc) {
-		pr_err("reboot kprobe failed: %d\n", rc);
-	} else {
-		pr_info("reboot kprobe registered successfully\n");
-	}
+    sulog_init_heap(); // grab heap memory for sulog
 
-    sulog_init_heap(); // grab heap memory
 }
 
 void ksu_supercalls_exit(void)
@@ -851,11 +930,11 @@ void ksu_supercalls_exit(void)
 static long anon_ksu_ioctl(struct file *filp, unsigned int cmd,
                            unsigned long arg)
 {
-	void __user *argp = (void __user *)arg;
-	int i;
+    void __user *argp = (void __user *)arg;
+    int i;
 
 #ifdef CONFIG_KSU_DEBUG
-	pr_info("ksu ioctl: cmd=0x%x from uid=%d\n", cmd, current_uid().val);
+    pr_info("ksu ioctl: cmd=0x%x from uid=%d\n", cmd, current_uid().val);
 #endif
 
     for (i = 0; ksu_ioctl_handlers[i].handler; i++) {
@@ -868,41 +947,42 @@ static long anon_ksu_ioctl(struct file *filp, unsigned int cmd,
                 return -EPERM;
             }
             // Execute handler
-            return ksu_ioctl_handlers[i].handler(argp);
+            int ret = ksu_ioctl_handlers[i].handler(argp);
+            return ret;
         }
     }
 
-	pr_warn("ksu ioctl: unsupported command 0x%x\n", cmd);
-	return -ENOTTY;
+    pr_warn("ksu ioctl: unsupported command 0x%x\n", cmd);
+    return -ENOTTY;
 }
 
 // File release handler
 static int anon_ksu_release(struct inode *inode, struct file *filp)
 {
-	pr_info("ksu fd released\n");
-	return 0;
+    pr_info("ksu fd released\n");
+    return 0;
 }
 
 // File operations structure
 static const struct file_operations anon_ksu_fops = {
-	.owner = THIS_MODULE,
-	.unlocked_ioctl = anon_ksu_ioctl,
-	.compat_ioctl = anon_ksu_ioctl,
-	.release = anon_ksu_release,
+    .owner = THIS_MODULE,
+    .unlocked_ioctl = anon_ksu_ioctl,
+    .compat_ioctl = anon_ksu_ioctl,
+    .release = anon_ksu_release,
 };
 
 // Install KSU fd to current process
 int ksu_install_fd(void)
 {
-	struct file *filp;
-	int fd;
+    struct file *filp;
+    int fd;
 
-	// Get unused fd
-	fd = get_unused_fd_flags(O_CLOEXEC);
-	if (fd < 0) {
-		pr_err("ksu_install_fd: failed to get unused fd\n");
-		return fd;
-	}
+    // Get unused fd
+    fd = get_unused_fd_flags(O_CLOEXEC);
+    if (fd < 0) {
+        pr_err("ksu_install_fd: failed to get unused fd\n");
+        return fd;
+    }
 
     // Create anonymous inode file
     filp = anon_inode_getfile("[ksu_driver]", &anon_ksu_fops, NULL,
@@ -913,10 +993,10 @@ int ksu_install_fd(void)
         return PTR_ERR(filp);
     }
 
-	// Install fd
-	fd_install(fd, filp);
+    // Install fd
+    fd_install(fd, filp);
 
-	pr_info("ksu fd installed: %d for pid %d\n", fd, current->pid);
+    pr_info("ksu fd installed: %d for pid %d\n", fd, current->pid);
 
-	return fd;
+    return fd;
 }

@@ -41,8 +41,8 @@ struct root_profile *ksu_get_root_profile(uid_t uid);
 
 static inline bool is_appuid(uid_t uid)
 {
-	uid_t appid = uid % PER_USER_RANGE;
-	return appid >= FIRST_APPLICATION_UID && appid <= LAST_APPLICATION_UID;
+    uid_t appid = uid % PER_USER_RANGE;
+    return appid >= FIRST_APPLICATION_UID && appid <= LAST_APPLICATION_UID;
 }
 
 static inline bool is_isolated_process(uid_t uid)
@@ -50,4 +50,10 @@ static inline bool is_isolated_process(uid_t uid)
     uid_t appid = uid % PER_USER_RANGE;
     return appid >= FIRST_ISOLATED_UID && appid <= LAST_ISOLATED_UID;
 }
+
+#ifdef CONFIG_KSU_MANUAL_SU
+bool ksu_temp_grant_root_once(uid_t uid);
+void ksu_temp_revoke_root_once(uid_t uid);
+#endif
+
 #endif

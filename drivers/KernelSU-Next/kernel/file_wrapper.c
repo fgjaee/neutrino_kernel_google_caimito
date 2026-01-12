@@ -326,11 +326,6 @@ static ssize_t ksu_wrapper_copy_file_range(struct file *file_in, loff_t pos_in,
                                        flags);
 }
 
-// no REMAP_FILE_DEDUP: use file_in
-// https://cs.android.com/android/kernel/superproject/+/common-android-mainline:common/fs/read_write.c;l=1598-1599;drc=398da7defe218d3e51b0f3bdff75147e28125b60
-// https://cs.android.com/android/kernel/superproject/+/common-android-mainline:common/fs/remap_range.c;l=403-404;drc=398da7defe218d3e51b0f3bdff75147e28125b60
-// REMAP_FILE_DEDUP: use file_out
-// https://cs.android.com/android/kernel/superproject/+/common-android-mainline:common/fs/remap_range.c;l=483-484;drc=398da7defe218d3e51b0f3bdff75147e28125b60
 static loff_t ksu_wrapper_remap_file_range(struct file *file_in, loff_t pos_in,
                                            struct file *file_out,
                                            loff_t pos_out, loff_t len,
