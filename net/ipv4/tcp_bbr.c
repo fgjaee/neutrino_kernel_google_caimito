@@ -72,6 +72,8 @@
 #define BBR_VERSION		3
 
 #define bbr_param(sk,name)	(bbr_ ## name)
+/* For boolean contexts, use != 0 to silence -Wconstant-logical-operand */
+#define bbr_param_bool(sk,name)	((bbr_ ## name) != 0)
 
 /* Scale factor for rate in pkt/uSec unit to avoid truncation in bandwidth
  * estimation. The rate unit ~= (1500 bytes / 1 usec / 2^24) ~= 715 bps.
@@ -1077,7 +1079,7 @@ static int bbr_update_ecn_alpha(struct sock *sk)
 
 	/* See if we should use ECN sender logic for this connection. */
 	if (!bbr->ecn_eligible && bbr_can_use_ecn(sk) &&
-	    bbr_param(sk, ecn_factor) &&
+	    bbr_param_bool(sk, ecn_factor) &&
 	    (bbr->min_rtt_us <= bbr_ecn_max_rtt_us ||
 	     !bbr_ecn_max_rtt_us))
 		bbr->ecn_eligible = 1;
@@ -1184,7 +1186,7 @@ static bool bbr_is_inflight_too_high(const struct sock *sk,
 	}
 
 	if (rs->delivered_ce > 0 && rs->delivered > 0 &&
-	    bbr->ecn_eligible && bbr_param(sk, ecn_thresh)) {
+	    bbr->ecn_eligible && bbr_param_bool(sk, ecn_thresh)) {
 		ecn_thresh = (u64)rs->delivered * bbr_param(sk, ecn_thresh) >>
 				BBR_SCALE;
 		if (rs->delivered_ce > ecn_thresh) {
@@ -1382,7 +1384,7 @@ static void bbr_adapt_lower_bounds(struct sock *sk,
 		return;
 
 	/* ECN response. */
-	if (bbr->ecn_in_round && bbr_param(sk, ecn_factor)) {
+	if (bbr->ecn_in_round && bbr_param_bool(sk, ecn_factor)) {
 		bbr_init_lower_bounds(sk, false);
 		bbr_ecn_lower_bounds(sk, &ecn_inflight_lo);
 	}
