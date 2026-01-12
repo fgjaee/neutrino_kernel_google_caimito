@@ -44,6 +44,8 @@ int ksu_handle_devpts(struct inode *inode)
 bool ksu_execveat_hook = true;
 EXPORT_SYMBOL(ksu_execveat_hook);
 
+struct user_arg_ptr;
+
 /* Fix for ksu_handle_execveat */
 int ksu_handle_execveat(int *fd, struct filename **filename_ptr,
 			struct user_arg_ptr *argv,
