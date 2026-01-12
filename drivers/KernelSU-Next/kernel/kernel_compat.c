@@ -10,16 +10,6 @@
 bool ksu_input_hook = true;
 EXPORT_SYMBOL(ksu_input_hook);
 
-/* 
- * Fix for undefined symbol ksu_handle_sys_reboot
- * kernel/reboot.c calls this. 
- * Logic is likely for SafeMode but handled elsewhere (ksud input hook). 
- * Stubbing to return 0 (allow reboot) is safe.
- */
-int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg)
-{
-    return 0;
-}
 
 /* 
  * Fix for undefined symbol ksu_handle_execveat_sucompat
@@ -60,12 +50,6 @@ EXPORT_SYMBOL(ksu_vfs_read_hook);
 
 /* Fix for ksu_handle_sys_read */
 int ksu_handle_sys_read(unsigned int fd, char __user *buf, size_t count, long *ret)
-{
-    return 0;
-}
-
-/* Fix for ksu_handle_setresuid */
-int ksu_handle_setresuid(uid_t ruid, uid_t euid, uid_t suid)
 {
     return 0;
 }
