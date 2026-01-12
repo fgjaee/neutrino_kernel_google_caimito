@@ -245,8 +245,7 @@ source "drivers/hte/Kconfig"
 
 source "google-modules/Kconfig"
 
-# source "drivers/kernelsu/Kconfig"
-source "drivers/KernelSU-Next/kernel/Kconfig"
+# KernelSU-Next Kconfig already sourced above at line 210
 
 
 
