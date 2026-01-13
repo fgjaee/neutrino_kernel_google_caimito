@@ -90,6 +90,20 @@ ip6tables -t mangle -A POSTROUTING -o rmnet+ -j HL --hl-set 64
 ./build_kernel.sh
 ```
 
+### Option 3: Create AnyKernel3 Zip (Script)
+To generate a flashable `AnyKernel3-zumapro.zip` automatically:
+```bash
+./scripts/make_anykernel3_zip.sh
+```
+
+### Option 4: Create AnyKernel3 Zip (Manual / Replace Placeholders)
+If you need to manually create the zip (e.g., updating a generic AnyKernel3 zip):
+1. Download [AnyKernel3](https://github.com/osm0sis/AnyKernel3).
+2. **Replace Placeholder Image**: Copy `out/arch/arm64/boot/Image.lz4` to the root of the AnyKernel3 folder.
+3. **Replace Placeholder Script**: Copy `scripts/anykernel3/anykernel.sh` to the AnyKernel3 folder (replacing the default `anykernel.sh`).
+4. **Clear Placeholders**: Delete the contents of the `modules`, `patch`, and `ramdisk` folders (unless you have specific files to add).
+5. Zip the contents recursively (excluding `.git` and gitignore).
+
 ## 📦 Output Files
 
 After building:
@@ -98,6 +112,12 @@ After building:
 
 ## ⚠️ Flashing Instructions
 
+### Method 1: AnyKernel3 Zip (Recommended)
+1. Transfer `AnyKernel3-zumapro.zip` to your device.
+2. Flash using a Kernel Manager (e.g., FKM, EXKM) or KernelSU/APatch App (if supported).
+   - **Note**: Requires root or a custom recovery.
+
+### Method 2: Manual Fastboot Flash
 > **CRITICAL**: Flash to `vendor_kernel_boot`, NOT `boot.img`!
 
 ```bash
