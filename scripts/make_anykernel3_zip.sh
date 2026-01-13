@@ -48,11 +48,17 @@ rm -f "$AK_DIR/Image"* "$AK_DIR/zImage"* "$AK_DIR/dtb"* "$AK_DIR/dtbo.img"
 rm -rf "$AK_DIR/modules/"*
 rm -rf "$AK_DIR/patch/"*
 rm -rf "$AK_DIR/ramdisk/"*
-# Ensure directories exist
-mkdir -p "$AK_DIR/modules" "$AK_DIR/patch" "$AK_DIR/ramdisk"
+# Ensure directories exist only if we are using them (currently we are not)
+# mkdir -p "$AK_DIR/modules" "$AK_DIR/patch" "$AK_DIR/ramdisk"
+rm -rf "$AK_DIR/modules" "$AK_DIR/patch" "$AK_DIR/ramdisk"
 
 cp scripts/anykernel3/anykernel.sh "$AK_DIR/anykernel.sh"
 cp "$IMAGE_PATH" "$AK_DIR/Image.lz4"
+
+# Fix permissions for tools (critical for busybox)
+echo "🔧 Fixing permissions..."
+chmod -R 755 "$AK_DIR/tools"
+chmod 755 "$AK_DIR/anykernel.sh"
 
 ZIP_NAME="AnyKernel3-zumapro.zip"
 ( cd "$AK_DIR" && zip -r9 "$WORKDIR/$ZIP_NAME" ./* -x .git .gitignore ./*.zip )
