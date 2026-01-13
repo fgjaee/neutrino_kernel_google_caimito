@@ -68,3 +68,9 @@ jobs:
       with:
         name: dtbs
         path: kernel_source/out/arch/arm64/boot/dts/google/*.dtb
+
+    - name: Upload AnyKernel3
+      uses: actions/upload-artifact@v4
+      with:
+        name: AnyKernel3-zumapro.zip
+        path: kernel_source/AnyKernel3-*.zip
