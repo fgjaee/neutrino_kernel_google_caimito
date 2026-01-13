@@ -67,7 +67,6 @@ echo "✅ Build completed successfully!"
 echo "   Kernel Image: $O/arch/arm64/boot/Image.lz4"
 echo "   DTBs:         $O/arch/arm64/boot/dts/google/"
 
-if [ "${MAKE_ANYKERNEL3:-0}" -eq 1 ]; then
-    echo "📦 Packaging AnyKernel3 zip..."
-    ./scripts/make_anykernel3_zip.sh "$O"
-fi
+echo "📦 Packaging AnyKernel3 zip..."
+chmod +x ./scripts/make_anykernel3_zip.sh
+./scripts/make_anykernel3_zip.sh "$O"
