@@ -104,6 +104,15 @@ If you need to manually create the zip (e.g., updating a generic AnyKernel3 zip)
 4. **Clear Placeholders**: Delete the contents of the `modules`, `patch`, and `ramdisk` folders (unless you have specific files to add).
 5. Zip the contents recursively (excluding `.git` and gitignore).
 
+### Option 5: Repack Vendor Kernel Boot Image (Script)
+If you prefer to flash a raw disk image instead of using AnyKernel3:
+1. Obtain your stock `vendor_kernel_boot.img` (extract from factory image).
+2. Run the repack script:
+   ```bash
+   ./scripts/repack_vendor_kernel_boot.sh /path/to/stock_vendor_kernel_boot.img
+   ```
+3. The script will generate `vendor_kernel_boot-repacked.img`.
+
 ## 📦 Output Files
 
 After building:

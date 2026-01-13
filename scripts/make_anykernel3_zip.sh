@@ -58,17 +58,21 @@ cp "$IMAGE_PATH" "$AK_DIR/Image.lz4"
 # Remove irrelevant README
 rm -f "$AK_DIR/README.md"
 
-# Replace 32-bit busybox with 64-bit busybox (required for Pixel 9/Android 15+)
-echo "⬇️  Downloading 64-bit busybox..."
-curl -L -o "$AK_DIR/tools/busybox" "https://raw.githubusercontent.com/osm0sis/AnyKernel3/master/tools/busybox"
-# Wait, the master branch one IS 32-bit. We need a specific aarch64 build.
-# Using osm0sis's Android Image Kitchen binaries or a known good static aarch64 busybox.
-# A reliable source for a static aarch64 busybox is the mime-types/busybox-static repo or similar, 
-# but let's use a direct link to a known working binary commonly used in Android rooting.
-# Actually, KSU/Magisk usually rely on their own internal busybox, but AK3 needs one to run.
-# Let's try downloading from a reliable static binary source.
-curl -L -o "$AK_DIR/tools/busybox" "https://github.com/Mainstream-Magisk/BusyBox-Binary/raw/master/builds/busybox-arm64"
+# Replace 32-bit tools with 64-bit tools from Magisk APK (Critical for Pixel 9/Android 15)
+echo "⬇️  Downloading Magisk to extract 64-bit tools..."
+MAGISK_APK="$WORKDIR/Magisk.apk"
+curl -L -o "$MAGISK_APK" "https://github.com/topjohnwu/Magisk/releases/download/v27.0/Magisk-v27.0.apk"
 
+echo "📦 Extracting 64-bit busybox and magiskboot..."
+# Extract libbusybox.so -> busybox
+unzip -p "$MAGISK_APK" "lib/arm64-v8a/libbusybox.so" > "$AK_DIR/tools/busybox"
+# Extract libmagiskboot.so -> magiskboot
+unzip -p "$MAGISK_APK" "lib/arm64-v8a/libmagiskboot.so" > "$AK_DIR/tools/magiskboot"
+# Also update magiskpolicy if it exists, as it's often used
+if unzip -l "$MAGISK_APK" | grep -q "libmagiskpolicy.so"; then
+    unzip -p "$MAGISK_APK" "lib/arm64-v8a/libmagiskpolicy.so" > "$AK_DIR/tools/magiskpolicy"
+    chmod 755 "$AK_DIR/tools/magiskpolicy"
+fi
 
 # Fix permissions for tools (critical for busybox)
 echo "🔧 Fixing permissions..."

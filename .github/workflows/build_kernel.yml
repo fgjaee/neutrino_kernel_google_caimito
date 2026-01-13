@@ -57,6 +57,26 @@ jobs:
         ./build_kernel.sh
 
     # 6. Upload Image (Note the updated path!)
+    # 6. Generate AnyKernel3 Zip
+    - name: Generate AnyKernel3 Zip
+      run: |
+        cd kernel_source
+        chmod +x scripts/make_anykernel3_zip.sh
+        ./scripts/make_anykernel3_zip.sh
+
+    # 7. Repack Vendor Kernel Boot
+    - name: Repack Vendor Kernel Boot
+      run: |
+        cd kernel_source
+        chmod +x scripts/repack_vendor_kernel_boot.sh
+        # Check if prebuilt exists, else skip (prevent fail if user forgot to push it)
+        if [ -f "prebuilts/vendor_kernel_boot.img" ]; then
+          ./scripts/repack_vendor_kernel_boot.sh prebuilts/vendor_kernel_boot.img
+        else
+          echo "⚠️ Stock vendor_kernel_boot.img not found in prebuilts/, skipping repack."
+        fi
+
+    # 8. Upload Artifacts
     - name: Upload Image
       uses: actions/upload-artifact@v4
       with:
@@ -74,3 +94,9 @@ jobs:
       with:
         name: AnyKernel3-zumapro.zip
         path: kernel_source/AnyKernel3-*.zip
+
+    - name: Upload Repacked Vendor Boot
+      uses: actions/upload-artifact@v4
+      with:
+        name: vendor_kernel_boot-repacked.img
+        path: kernel_source/vendor_kernel_boot-repacked.img
