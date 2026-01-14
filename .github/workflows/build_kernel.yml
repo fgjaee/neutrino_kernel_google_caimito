@@ -57,14 +57,7 @@ jobs:
         ./build_kernel.sh
 
     # 6. Upload Image (Note the updated path!)
-    # 6. Generate AnyKernel3 Zip
-    - name: Generate AnyKernel3 Zip
-      run: |
-        cd kernel_source
-        chmod +x scripts/make_anykernel3_zip.sh
-        ./scripts/make_anykernel3_zip.sh
-
-    # 7. Repack Vendor Kernel Boot
+    # 6. Repack Vendor Kernel Boot (Must run BEFORE zip generation)
     - name: Repack Vendor Kernel Boot
       run: |
         cd kernel_source
@@ -75,6 +68,13 @@ jobs:
         else
           echo "⚠️ Stock vendor_kernel_boot.img not found in prebuilts/, skipping repack."
         fi
+
+    # 7. Generate AnyKernel3 Zip
+    - name: Generate AnyKernel3 Zip
+      run: |
+        cd kernel_source
+        chmod +x scripts/make_anykernel3_zip.sh
+        ./scripts/make_anykernel3_zip.sh
 
     # 8. Upload Artifacts
     - name: Upload Image

@@ -181,3 +181,4 @@ out/
 /build_pid.txt
 /build_fail_log.txt
 /build_log.txt
+vendor_kernel_boot-repacked.img
