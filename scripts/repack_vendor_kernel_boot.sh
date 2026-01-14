@@ -24,59 +24,20 @@ if [ ! -f "$KERNEL_IMG" ]; then
     exit 1
 fi
 
-if ! command -v curl >/dev/null 2>&1; then
-    echo "❌ curl is required." >&2
-    exit 1
-fi
 
-if ! command -v unzip >/dev/null 2>&1; then
-    echo "❌ unzip is required." >&2
-    exit 1
-fi
+# Script updated to use local python logic, no external tools needed except python3
 
-WORKDIR=$(mktemp -d)
-cleanup() {
-    rm -rf "$WORKDIR"
-}
-trap cleanup EXIT
 
-echo "🔧 Preparing tools..."
 
-# Reuse logic to get 64-bit magiskboot from Magisk APK
-MAGISKBOOT="$WORKDIR/magiskboot"
-MAGISK_APK="$WORKDIR/Magisk.apk"
-MAGISK_URL="https://github.com/topjohnwu/Magisk/releases/download/v27.0/Magisk-v27.0.apk"
+echo "🔄 Repacking image using custom script..."
+python3 scripts/manage_vendor_kernel_boot.py repack "$STOCK_IMG" "$KERNEL_IMG" "$OUTPUT_IMG"
 
-echo "⬇️  Downloading Magisk to extract magiskboot..."
-curl -L -o "$MAGISK_APK" "$MAGISK_URL"
-
-echo "📦 Extracting magiskboot..."
-unzip -p "$MAGISK_APK" "lib/x86_64/libmagiskboot.so" > "$MAGISKBOOT"
-chmod 755 "$MAGISKBOOT"
-
-echo "📂 Unpacking stock image..."
-cp "$STOCK_IMG" "$WORKDIR/vendor_kernel_boot.img"
-cd "$WORKDIR"
-./magiskboot unpack vendor_kernel_boot.img
-
-if [ ! -f "kernel" ]; then
-    echo "❌ Failed to unpack kernel from image. Is this a valid vendor_kernel_boot.img?"
-    exit 1
-fi
-
-echo "🔄 Replacing kernel..."
-cp "$KERNEL_IMG" kernel
-
-echo "📦 Repacking image..."
-./magiskboot repack vendor_kernel_boot.img
-
-if [ ! -f "new-boot.img" ]; then
+if [ ! -f "$OUTPUT_IMG" ]; then
     echo "❌ Repack failed."
     exit 1
 fi
 
-mv new-boot.img "$OLDPWD/$OUTPUT_IMG"
-cd "$OLDPWD"
+echo "✅ Done." # Moved by script
 
 echo "✅ Repacked image created: $OUTPUT_IMG"
 echo "   Flash with: fastboot flash vendor_kernel_boot $OUTPUT_IMG"
