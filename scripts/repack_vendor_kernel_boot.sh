@@ -51,7 +51,7 @@ echo "⬇️  Downloading Magisk to extract magiskboot..."
 curl -L -o "$MAGISK_APK" "$MAGISK_URL"
 
 echo "📦 Extracting magiskboot..."
-unzip -p "$MAGISK_APK" "lib/arm64-v8a/libmagiskboot.so" > "$MAGISKBOOT"
+unzip -p "$MAGISK_APK" "lib/x86_64/libmagiskboot.so" > "$MAGISKBOOT"
 chmod 755 "$MAGISKBOOT"
 
 echo "📂 Unpacking stock image..."
