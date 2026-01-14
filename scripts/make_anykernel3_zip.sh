@@ -50,6 +50,9 @@ cp scripts/anykernel3/anykernel.sh "$AK_DIR/anykernel.sh"
 # Copy valid image as vendor_kernel_boot.img for AK3 to flash
 cp "$IMAGE_PATH" "$AK_DIR/vendor_kernel_boot.img"
 
+# Create a dummy Image file to appease flashers/KPM that check for it
+touch "$AK_DIR/Image"
+
 # Remove irrelevant README
 rm -f "$AK_DIR/README.md"
 
