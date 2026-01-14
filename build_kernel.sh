@@ -67,6 +67,7 @@ echo "✅ Build completed successfully!"
 echo "   Kernel Image: $O/arch/arm64/boot/Image.lz4"
 echo "   DTBs:         $O/arch/arm64/boot/dts/google/"
 
-echo "📦 Packaging AnyKernel3 zip..."
-chmod +x ./scripts/make_anykernel3_zip.sh
-./scripts/make_anykernel3_zip.sh "$O"
+# Packaging is now handled by CI workflow after correct order
+# echo "📦 Packaging AnyKernel3 zip..."
+# chmod +x ./scripts/make_anykernel3_zip.sh
+# ./scripts/make_anykernel3_zip.sh "$O"
