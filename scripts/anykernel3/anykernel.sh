@@ -12,6 +12,8 @@ do.cleanup=1
 do.cleanuponabort=0
 device.name1=zumapro
 device.name2=caimito
+device.name3=comet
+device.name4=google-comet
 supported.versions=
 supported.patchlevels=
 supported.vendorpatchlevels=
@@ -31,6 +33,8 @@ PATCH_VBMETA_FLAG=auto;
 reset_ak;
 
 # vendor_kernel_boot install
-split_boot; # skip unpack/repack ramdisk
-flash_boot;
+# vendor_kernel_boot install
+ui_print "  Flashing vendor_kernel_boot image...";
+dd if=/tmp/anykernel/vendor_kernel_boot.img of=$BLOCK;
+## end vendor_kernel_boot install
 ## end vendor_kernel_boot install
