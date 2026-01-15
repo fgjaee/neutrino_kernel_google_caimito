@@ -14,89 +14,61 @@ jobs:
   build:
     name: Build Kernel (Pixel 9 Pro Fold)
     runs-on: ubuntu-latest
-    
+
     steps:
-    # 1. Checkout into a specific subfolder (CRITICAL FIX)
     - name: Checkout Source
       uses: actions/checkout@v4
       with:
         path: kernel_source
         fetch-depth: 1
 
-    # 2. Setup the environment (Create the "neighbor" folder)
     - name: Prepare Directory Structure
       run: |
-        # Create the google-modules folder that the Makefile is looking for
-        # Create the google-modules folder that the Makefile is looking for
-        # mkdir -p google-modules # DISABLED: google-modules is in-tree
+        mkdir -p google-modules
 
     - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc bison flex libssl-dev make libc6-dev libncurses5-dev lz4
-        sudo apt-get install -y openssl
+        sudo apt-get install -y bc bison flex libssl-dev make libc6-dev libncurses5-dev lz4 openssl python3
 
-    # 3. Setup Toolchain (Inside the new folder)
     - name: Setup Toolchain
       run: |
         cd kernel_source
         chmod +x setup_toolchain.sh
         ./setup_toolchain.sh
 
-    # 4. Fix Timestamps (Still good to have, but now inside the folder)
-    - name: Fix Timestamps
-      run: |
-        cd kernel_source
-        find . -type f -exec touch {} +
-
-    # 5. Build Kernel (Inside the new folder)
     - name: Build Kernel
       run: |
         cd kernel_source
         chmod +x build_kernel.sh
         ./build_kernel.sh
 
-    # 6. Upload Image (Note the updated path!)
-    # 6. Repack Vendor Kernel Boot (Must run BEFORE zip generation)
-    - name: Repack Vendor Kernel Boot
-      run: |
-        cd kernel_source
-        chmod +x scripts/repack_vendor_kernel_boot.sh
-        # Check if prebuilt exists, else skip (prevent fail if user forgot to push it)
-        if [ -f "prebuilts/vendor_kernel_boot.img" ]; then
-          ./scripts/repack_vendor_kernel_boot.sh prebuilts/vendor_kernel_boot.img
-        else
-          echo "⚠️ Stock vendor_kernel_boot.img not found in prebuilts/, skipping repack."
-        fi
+    # DISABLED: Causing errors and unnecessary if using AnyKernel3
+    # - name: Repack Vendor Kernel Boot
+    #   run: ...
 
-    # 7. Generate AnyKernel3 Zip
     - name: Generate AnyKernel3 Zip
       run: |
         cd kernel_source
+
+        echo "⬇️ Gathering Build Artifacts..."
+        # 1. Copy Kernel Image
+        cp out/arch/arm64/boot/Image.lz4 AnyKernel3/
+
+        # 2. Copy DTBs (Try multiple common locations)
+        # Standard kernel output location:
+        cp out/arch/arm64/boot/dts/google/*.dtb AnyKernel3/dtb 2>/dev/null || true
+        cp out/arch/arm64/boot/dts/google/*.dtb AnyKernel3/ 2>/dev/null || true
+        # Google Modules output location:
+        cp out/google-modules/soc/*.dtb AnyKernel3/dtb 2>/dev/null || true
+
+        # 3. Run the zipper
+        echo "📦 Zipping..."
         chmod +x scripts/make_anykernel3_zip.sh
         ./scripts/make_anykernel3_zip.sh
 
-    # 8. Upload Artifacts
-    - name: Upload Image
+    - name: Upload AnyKernel3 Zip
       uses: actions/upload-artifact@v4
       with:
-        name: Image.lz4
-        path: kernel_source/out/arch/arm64/boot/Image.lz4
-
-    - name: Upload DTBs
-      uses: actions/upload-artifact@v4
-      with:
-        name: dtbs
-        path: kernel_source/out/arch/arm64/boot/dts/google/*.dtb
-
-    - name: Upload AnyKernel3
-      uses: actions/upload-artifact@v4
-      with:
-        name: AnyKernel3-zumapro.zip
-        path: kernel_source/AnyKernel3-*.zip
-
-    - name: Upload Repacked Vendor Boot
-      uses: actions/upload-artifact@v4
-      with:
-        name: vendor_kernel_boot-repacked.img
-        path: kernel_source/vendor_kernel_boot-repacked.img
+        name: AnyKernel3-Neutrino-Signed
+        path: kernel_source/AnyKernel3/*.zip
