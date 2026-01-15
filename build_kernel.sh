@@ -39,11 +39,15 @@ export KBUILD_BUILD_HOST="GitHub-Runner"
 # 4. Configure
 echo "🛠️  Configuring kernel with $DEFCONFIG..."
 make O=$O LLVM=1 LLVM_IAS=1 $DEFCONFIG
-if ! grep -q "^CONFIG_MODULES=y$" "$O/.config"; then
-    echo "🔧 Enabling CONFIG_MODULES..."
-    scripts/config --file "$O/.config" --enable MODULES
-    make O=$O LLVM=1 LLVM_IAS=1 olddefconfig
-fi
+ensure_modules_enabled() {
+    if ! grep -q "^CONFIG_MODULES=y$" "$O/.config"; then
+        echo "🔧 Enabling CONFIG_MODULES..."
+        scripts/config --file "$O/.config" --enable MODULES
+        make O=$O LLVM=1 LLVM_IAS=1 olddefconfig
+    fi
+}
+
+ensure_modules_enabled
 
 # 5. Build Kernel Image
 echo "🚀 Building Kernel Image..."
@@ -51,6 +55,7 @@ make O=$O LLVM=1 LLVM_IAS=1 -j$(nproc) Image.lz4
 
 # 6. Build Google Modules (REQUIRED for DTBs on Pixel 9)
 echo "🚀 Building Google Modules & DTBs..."
+ensure_modules_enabled
 # We try to build modules in the adjacent folder if it exists, or in-tree
 if [ -d "../google-modules" ]; then
     MODULES_DIR=$(realpath ../google-modules)
@@ -58,6 +63,8 @@ if [ -d "../google-modules" ]; then
 
     # Build SoC modules, then build DTBs from the main tree.
     make O=$O LLVM=1 LLVM_IAS=1 \
+         KBUILD_OUTPUT=$O \
+         KCONFIG_CONFIG=$O/.config \
          -j$(nproc) \
          M=$MODULES_DIR/soc \
          KERNEL_SRC=$(pwd) \
