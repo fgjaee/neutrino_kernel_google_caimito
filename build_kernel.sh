@@ -39,6 +39,11 @@ export KBUILD_BUILD_HOST="GitHub-Runner"
 # 4. Configure
 echo "🛠️  Configuring kernel with $DEFCONFIG..."
 make O=$O LLVM=1 LLVM_IAS=1 $DEFCONFIG
+if ! grep -q "^CONFIG_MODULES=y$" "$O/.config"; then
+    echo "🔧 Enabling CONFIG_MODULES..."
+    scripts/config --file "$O/.config" --enable MODULES
+    make O=$O LLVM=1 LLVM_IAS=1 olddefconfig
+fi
 
 # 5. Build Kernel Image
 echo "🚀 Building Kernel Image..."
