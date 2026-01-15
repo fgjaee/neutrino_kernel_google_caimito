@@ -31,14 +31,12 @@ if [ ! -f "arch/arm64/configs/$DEFCONFIG" ]; then
 fi
 
 # 3. Prepare Environment
-mkdir -p $O
+rm -rf "$O"
+mkdir -p "$O"
 export KBUILD_BUILD_USER="Neutrino"
 export KBUILD_BUILD_HOST="GitHub-Runner"
 
-# 4. Clean and Configure
-echo "🧹 Cleaning previous builds..."
-make O=$O mrproper
-
+# 4. Configure
 echo "🛠️  Configuring kernel with $DEFCONFIG..."
 make O=$O LLVM=1 LLVM_IAS=1 $DEFCONFIG
 
