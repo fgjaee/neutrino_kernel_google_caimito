@@ -50,15 +50,13 @@ After a successful build, your files will be in:
 *   **Kernel Image**: `out/arch/arm64/boot/Image.lz4` (Target for `vendor_kernel_boot`)
 *   **DTBs**: `out/arch/arm64/boot/dts/google/*.dtb`
 
-## 📲 Step 4: Flashing (Pixel 9 Pro Fold)
-**WARNING**: This kernel targets the `vendor_kernel_boot` partition.
-
-1.  **Repack**: You cannot flash `Image.lz4` directly. You must repack it into a `vendor_kernel_boot.img`.
-    *   Use **AnyKernel3** (configure for `vendor_kernel_boot`).
-    *   OR use `magiskboot` / `mkbootimg` if you are comfortable with manual repacking.
-2.  **Flash**:
-    ```bash
-    fastboot flash vendor_kernel_boot vendor_kernel_boot-new.img
-    ```
-
-> **Note**: Do NOT flash to `boot` partition. The Pixel 9 series (Caimito) uses `init_boot` for ramdisk and `vendor_kernel_boot` for the kernel.
+## 📲 ​📲 Step 4: Flashing (Pixel 9 Pro Fold)
+​WARNING: This device requires updating BOTH the boot and vendor_kernel_boot partitions to boot a custom kernel.
+​Generate AnyKernel3 Zip:
+Use the provided workflow or script to create an AnyKernel3 zip. This zip is configured to:
+​Flash Image.lz4 to the boot partition (The Kernel).
+​Flash dtb files to the vendor_kernel_boot partition (The Device Tree).
+​Flash in Recovery:
+adb sideload AnyKernel3-Neutrino.zip
+(Or flash via Kernel Flasher / FKM app if rooted).
+​Note: Do NOT attempt to flash only one partition. The Kernel and DTBs must match version-for-version.
