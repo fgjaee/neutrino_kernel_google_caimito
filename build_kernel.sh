@@ -30,44 +30,38 @@ if [ ! -f "arch/arm64/configs/$DEFCONFIG" ]; then
     exit 1
 fi
 
-# 3. Prepare Environment (Fixes the loop!)
-mkdir -p $O
+# 3. Prepare Environment
+rm -rf "$O"
+mkdir -p "$O"
 export KBUILD_BUILD_USER="Neutrino"
 export KBUILD_BUILD_HOST="GitHub-Runner"
-export NM=llvm-nm
 
-# 4. Clean and Configure (skip mrproper on fresh builds)
-if [ -f "$O/.config" ]; then
-    echo "🧹 Cleaning previous builds..."
-    make O=$O mrproper
-else
-    echo "ℹ️  Fresh build - skipping cleanup"
-fi
-
+# 4. Configure
 echo "🛠️  Configuring kernel with $DEFCONFIG..."
-make O=$O LLVM=1 LLVM_IAS=1 NM=llvm-nm $DEFCONFIG
+make O=$O LLVM=1 LLVM_IAS=1 $DEFCONFIG
 
-# Force config finalization to prevent loops
-# Force config finalization to prevent loops
-make O=$O LLVM=1 LLVM_IAS=1 NM=llvm-nm syncconfig
+# 5. Build Kernel Image
+echo "🚀 Building Kernel Image..."
+make O=$O LLVM=1 LLVM_IAS=1 -j$(nproc) Image.lz4
 
-# 4.5 Merge Module Fragment (Crucial for Fixes)
-if [ -f "enable_modules.fragment" ]; then
-    echo "🔧 Merging enable_modules.fragment..."
-    cat enable_modules.fragment >> $O/.config
-    make O=$O LLVM=1 LLVM_IAS=1 NM=llvm-nm olddefconfig
+# 6. Build Google Modules (REQUIRED for DTBs on Pixel 9)
+echo "🚀 Building Google Modules & DTBs..."
+# We try to build modules in the adjacent folder if it exists, or in-tree
+if [ -d "../google-modules" ]; then
+    MODULES_DIR=$(realpath ../google-modules)
+    echo "ℹ️  Found external modules at: $MODULES_DIR"
+
+    # Build SoC modules to get DTBs
+    make O=$O LLVM=1 LLVM_IAS=1 \
+         -j$(nproc) \
+         M=$MODULES_DIR/soc \
+         KERNEL_SRC=$(pwd) \
+         dtbs
+else
+    echo "⚠️  ../google-modules not found. Attempting to build DTBs in-tree..."
+    # Fallback: try to build dtbs from main tree just in case
+    make O=$O LLVM=1 LLVM_IAS=1 -j$(nproc) dtbs || echo "⚠️  DTB Build failed or no DTBs found."
 fi
-
-# 5. Build (modules disabled - testing if google-modules causes loop)
-echo "🚀 Building kernel (Image.lz4, dtbs only - modules skipped)..."
-make O=$O LLVM=1 LLVM_IAS=1 NM=llvm-nm -j$(nproc) Image.lz4 dtbs
 
 echo ""
-echo "✅ Build completed successfully!"
-echo "   Kernel Image: $O/arch/arm64/boot/Image.lz4"
-echo "   DTBs:         $O/arch/arm64/boot/dts/google/"
-
-# Packaging is now handled by CI workflow after correct order
-# echo "📦 Packaging AnyKernel3 zip..."
-# chmod +x ./scripts/make_anykernel3_zip.sh
-# ./scripts/make_anykernel3_zip.sh "$O"
+echo "✅ Build process finished."
