@@ -5,7 +5,7 @@ set -e
 export ARCH=arm64
 export SUBARCH=arm64
 export O=out
-export DEFCONFIG=neutrino_defconfig
+export DEFCONFIG=custom_defconfig
 
 # 1. Check for compiler
 CLANG_VER="r487747c"
@@ -33,7 +33,7 @@ fi
 # 3. Prepare Environment
 rm -rf "$O"
 mkdir -p "$O"
-export KBUILD_BUILD_USER="Neutrino"
+export KBUILD_BUILD_USER="CustomUser"
 export KBUILD_BUILD_HOST="GitHub-Runner"
 
 # 4. Configure

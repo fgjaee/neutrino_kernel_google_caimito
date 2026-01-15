@@ -1,4 +1,4 @@
-name: Build Neutrino Kernel
+name: Build Custom Kernel
 
 on:
   workflow_dispatch:
@@ -70,5 +70,5 @@ jobs:
     - name: Upload AnyKernel3 Zip
       uses: actions/upload-artifact@v4
       with:
-        name: AnyKernel3-Neutrino-Signed
+        name: AnyKernel3-Custom
         path: kernel_source/AnyKernel3/*.zip

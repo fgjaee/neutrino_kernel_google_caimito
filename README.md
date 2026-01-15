@@ -1,6 +1,5 @@
-# Neutrino Kernel for Pixel 9 Pro Fold (Caimito)
+# Custom Kernel for Pixel 9 Pro Fold (Caimito)
 
-[![Build Kernel](https://github.com/fgjaee/neutrino_kernel_google_caimito/actions/workflows/build_kernel.yml/badge.svg)](https://github.com/fgjaee/neutrino_kernel_google_caimito/actions/workflows/build_kernel.yml)
 
 A custom kernel for the **Google Pixel 9 Pro Fold** (codename: caimito) with integrated root solution and maximum stealth features.
 
