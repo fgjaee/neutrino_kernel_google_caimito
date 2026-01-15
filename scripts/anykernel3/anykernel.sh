@@ -4,7 +4,7 @@
 ### AnyKernel setup
 # global properties
 properties() { '
-kernel.string=Custom Kernel (zumapro)
+kernel.string=KometRa1n Kernel (zumapro)
 do.devicecheck=1
 do.modules=0
 do.systemless=1

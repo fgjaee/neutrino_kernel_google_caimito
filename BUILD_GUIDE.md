@@ -1,6 +1,6 @@
 # Kernel Build Guide (Final Build)
 
-This guide will help you build the **Custom Kernel (Pixel 9 Pro Fold)** with **SukiSU Ultra** integration.
+This guide will help you build the **KometRa1n Kernel (Pixel 9 Pro Fold)** with **SukiSU Ultra** integration.
 
 ## 📋 Prerequisites
 *   Linux environment (Ubuntu/Debian recommended)
@@ -12,7 +12,7 @@ You can compile this kernel entirely in the cloud without setting up a local too
 
 1.  **Push** this repository to GitHub.
 2.  Go to the **Actions** tab in your repository.
-3.  Select **"Build Custom Kernel"**.
+3.  Select **"Build KometRa1n Kernel"**.
 4.  Click **Run workflow**.
 
 Once complete, the `Image.lz4` and `dtbs` will be available in the **Artifacts** section of the workflow run.
@@ -40,7 +40,7 @@ Once the toolchain is set up, run the build helper script:
 
 This script will:
 1.  Detect the downloaded toolchain.
-2.  Configure the kernel using `custom_defconfig` (which includes all our Stealth/SukiSU patches).
+2.  Configure the kernel using `kometra1n_defconfig` (which includes all our Stealth/SukiSU patches).
 3.  Build the kernel image and device trees.
 4.  Output the results to the `out/` directory.
 
@@ -57,6 +57,6 @@ Use the provided workflow or script to create an AnyKernel3 zip. This zip is con
 ​Flash Image.lz4 to the boot partition (The Kernel).
 ​Flash dtb files to the vendor_kernel_boot partition (The Device Tree).
 ​Flash in Recovery:
-adb sideload AnyKernel3-Custom.zip
+adb sideload AnyKernel3-KometRa1n.zip
 (Or flash via Kernel Flasher / FKM app if rooted).
 ​Note: Do NOT attempt to flash only one partition. The Kernel and DTBs must match version-for-version.

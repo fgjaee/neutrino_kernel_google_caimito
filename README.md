@@ -1,4 +1,4 @@
-# Custom Kernel for Pixel 9 Pro Fold (Caimito)
+# KometRa1n Kernel for Pixel 9 Pro Fold (Caimito)
 
 
 A custom kernel for the **Google Pixel 9 Pro Fold** (codename: caimito) with integrated root solution and maximum stealth features.

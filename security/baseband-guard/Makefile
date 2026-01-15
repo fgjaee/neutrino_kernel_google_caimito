@@ -9,5 +9,5 @@ ccflags-y += -I$(objtree)/security/selinux -include $(srctree)/include/uapi/asm-
 obj-$(CONFIG_BBG) += bbg.o
 
 # Hardcoded version info
-ccflags-y += -DBBG_VERSION=\"custom\"
+ccflags-y += -DBBG_VERSION=\"kometra1n\"
 ccflags-y += -DBBG_REPO=\"https://github.com/vc-teahouse/Baseband-guard\"

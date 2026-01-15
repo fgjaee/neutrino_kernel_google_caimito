@@ -1,4 +1,4 @@
-name: Build Custom Kernel
+name: Build KometRa1n Kernel
 
 on:
   workflow_dispatch:
@@ -70,5 +70,5 @@ jobs:
     - name: Upload AnyKernel3 Zip
       uses: actions/upload-artifact@v4
       with:
-        name: AnyKernel3-Custom
+        name: AnyKernel3-KometRa1n
         path: kernel_source/AnyKernel3/*.zip
