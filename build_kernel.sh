@@ -51,12 +51,13 @@ if [ -d "../google-modules" ]; then
     MODULES_DIR=$(realpath ../google-modules)
     echo "ℹ️  Found external modules at: $MODULES_DIR"
 
-    # Build SoC modules to get DTBs
+    # Build SoC modules, then build DTBs from the main tree.
     make O=$O LLVM=1 LLVM_IAS=1 \
          -j$(nproc) \
          M=$MODULES_DIR/soc \
          KERNEL_SRC=$(pwd) \
-         dtbs
+         modules
+    make O=$O LLVM=1 LLVM_IAS=1 -j$(nproc) dtbs
 else
     echo "⚠️  ../google-modules not found. Attempting to build DTBs in-tree..."
     # Fallback: try to build dtbs from main tree just in case
